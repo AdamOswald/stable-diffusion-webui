@@ -20,7 +20,7 @@ import torch
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
-    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
+    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__)[0]
 
 from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
 import modules.codeformer_model as codeformer
@@ -68,10 +68,10 @@ there are reports of issues with training tab on the latest version.
 Use --skip-version-check commandline argument to disable this check.
         """.strip())
 
-    expected_xformers_version = "0.0.16rc425"
     if shared.xformers_available:
         import xformers
 
+        expected_xformers_version = "0.0.16rc425"
         if version.parse(xformers.__version__) < version.parse(expected_xformers_version):
             errors.print_error_explanation(f"""
 You are running xformers {xformers.__version__}.
@@ -189,7 +189,10 @@ def api_only():
 
     modules.script_callbacks.app_started_callback(None, app)
 
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch(
+        server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1",
+        port=cmd_opts.port or 7861,
+    )
 
 
 def webui():

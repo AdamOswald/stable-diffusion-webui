@@ -65,7 +65,7 @@ class PersonalizedBase(Dataset):
             except Exception:
                 continue
 
-            text_filename = os.path.splitext(path)[0] + ".txt"
+            text_filename = f"{os.path.splitext(path)[0]}.txt"
             filename = os.path.basename(path)
 
             if os.path.exists(text_filename):
@@ -99,10 +99,10 @@ class PersonalizedBase(Dataset):
             elif latent_sampling_method == "random":
                 entry = DatasetEntry(filename=path, filename_text=filename_text, latent_dist=latent_dist)
 
-            if not (self.tag_drop_out != 0 or self.shuffle_tags):
+            if self.tag_drop_out == 0 and not self.shuffle_tags:
                 entry.cond_text = self.create_text(filename_text)
 
-            if include_cond and not (self.tag_drop_out != 0 or self.shuffle_tags):
+            if include_cond and self.tag_drop_out == 0 and not self.shuffle_tags:
                 with devices.autocast():
                     entry.cond = cond_model([entry.cond_text]).to(devices.cpu).squeeze(0)
             groups[image.size].append(len(self.dataset))

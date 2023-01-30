@@ -15,7 +15,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for embedding in sd_hijack.model_hijack.embedding_db.word_embeddings.values():
             path, ext = os.path.splitext(embedding.filename)
-            preview_file = path + ".preview.png"
+            preview_file = f"{path}.preview.png"
 
             preview = None
             if os.path.isfile(preview_file):
@@ -27,7 +27,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "preview": preview,
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(embedding.name),
-                "local_preview": path + ".preview.png",
+                "local_preview": f"{path}.preview.png",
             }
 
     def allowed_directories_for_previews(self):

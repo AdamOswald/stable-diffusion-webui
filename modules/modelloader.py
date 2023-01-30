@@ -41,11 +41,13 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
         for place in places:
             if os.path.exists(place):
-                for file in glob.iglob(place + '**/**', recursive=True):
+                for file in glob.iglob(f'{place}**/**', recursive=True):
                     full_path = file
                     if os.path.isdir(full_path):
                         continue
-                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                    if ext_blacklist is not None and any(
+                        full_path.endswith(x) for x in ext_blacklist
+                    ):
                         continue
                     if len(ext_filter) != 0:
                         model_name, extension = os.path.splitext(file)
@@ -54,7 +56,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                     if file not in output:
                         output.append(full_path)
 
-        if model_url is not None and len(output) == 0:
+        if model_url is not None and not output:
             if download_name is not None:
                 dl = load_file_from_url(model_url, model_path, True, download_name)
                 output.append(dl)
@@ -110,9 +112,8 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
             for file in os.listdir(src_path):
                 fullpath = os.path.join(src_path, file)
                 if os.path.isfile(fullpath):
-                    if ext_filter is not None:
-                        if ext_filter not in file:
-                            continue
+                    if ext_filter is not None and ext_filter not in file:
+                        continue
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)

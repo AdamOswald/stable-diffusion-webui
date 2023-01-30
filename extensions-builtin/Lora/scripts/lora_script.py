@@ -31,8 +31,21 @@ script_callbacks.on_script_unloaded(unload)
 script_callbacks.on_before_ui(before_ui)
 
 
-shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
-    "sd_lora": shared.OptionInfo("None", "Add Lora to prompt", gr.Dropdown, lambda: {"choices": [""] + [x for x in lora.available_loras]}, refresh=lora.list_available_loras),
-    "lora_apply_to_outputs": shared.OptionInfo(False, "Apply Lora to outputs rather than inputs when possible (experimental)"),
-
-}))
+shared.options_templates.update(
+    shared.options_section(
+        ('extra_networks', "Extra Networks"),
+        {
+            "sd_lora": shared.OptionInfo(
+                "None",
+                "Add Lora to prompt",
+                gr.Dropdown,
+                lambda: {"choices": [""] + list(lora.available_loras)},
+                refresh=lora.list_available_loras,
+            ),
+            "lora_apply_to_outputs": shared.OptionInfo(
+                False,
+                "Apply Lora to outputs rather than inputs when possible (experimental)",
+            ),
+        },
+    )
+)

@@ -18,11 +18,7 @@ def has_mps() -> bool:
 
 
 def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
+    return next((args[x + 1] for x in range(len(args)) if name in args[x]), None)
 
 
 def get_cuda_device_string():
@@ -38,10 +34,7 @@ def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
 
-    if has_mps():
-        return "mps"
-
-    return "cpu"
+    return "mps" if has_mps() else "cpu"
 
 
 def get_optimal_device():
@@ -51,10 +44,7 @@ def get_optimal_device():
 def get_device_for(task):
     from modules import shared
 
-    if task in shared.cmd_opts.use_cpu:
-        return cpu
-
-    return get_optimal_device()
+    return cpu if task in shared.cmd_opts.use_cpu else get_optimal_device()
 
 
 def torch_gc():
@@ -69,7 +59,10 @@ def enable_tf32():
 
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
         # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]):
+        if any(
+            torch.cuda.get_device_capability(devid) == (7, 5)
+            for devid in range(torch.cuda.device_count())
+        ):
             torch.backends.cudnn.benchmark = True
 
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -159,9 +152,15 @@ def test_for_nans(x, where):
 # MPS workaround for https://github.com/pytorch/pytorch/issues/79383
 orig_tensor_to = torch.Tensor.to
 def tensor_to_fix(self, *args, **kwargs):
-    if self.device.type != 'mps' and \
-       ((len(args) > 0 and isinstance(args[0], torch.device) and args[0].type == 'mps') or \
-       (isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps')):
+    if self.device.type != 'mps' and (
+        args
+        and isinstance(args[0], torch.device)
+        and args[0].type == 'mps'
+        or (
+            isinstance(kwargs.get('device'), torch.device)
+            and kwargs['device'].type == 'mps'
+        )
+    ):
         self = self.contiguous()
     return orig_tensor_to(self, *args, **kwargs)
 
@@ -169,7 +168,11 @@ def tensor_to_fix(self, *args, **kwargs):
 # MPS workaround for https://github.com/pytorch/pytorch/issues/80800 
 orig_layer_norm = torch.nn.functional.layer_norm
 def layer_norm_fix(*args, **kwargs):
-    if len(args) > 0 and isinstance(args[0], torch.Tensor) and args[0].device.type == 'mps':
+    if (
+        args
+        and isinstance(args[0], torch.Tensor)
+        and args[0].device.type == 'mps'
+    ):
         args = list(args)
         args[0] = args[0].contiguous()
     return orig_layer_norm(*args, **kwargs)
@@ -191,7 +194,12 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
         output_dtype = kwargs.get('dtype', input.dtype)
         if output_dtype == torch.int64:
             return cumsum_func(input.cpu(), *args, **kwargs).to(input.device)
-        elif cumsum_needs_bool_fix and output_dtype == torch.bool or cumsum_needs_int_fix and (output_dtype == torch.int8 or output_dtype == torch.int16):
+        elif (
+            cumsum_needs_bool_fix
+            and output_dtype == torch.bool
+            or cumsum_needs_int_fix
+            and output_dtype in [torch.int8, torch.int16]
+        ):
             return cumsum_func(input.to(torch.int32), *args, **kwargs).to(torch.int64)
     return cumsum_func(input, *args, **kwargs)
 

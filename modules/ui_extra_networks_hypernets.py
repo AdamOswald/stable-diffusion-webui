@@ -14,21 +14,24 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for name, path in shared.hypernetworks.items():
             path, ext = os.path.splitext(path)
-            previews = [path + ".png", path + ".preview.png"]
+            previews = [f"{path}.png", f"{path}.preview.png"]
 
-            preview = None
-            for file in previews:
-                if os.path.isfile(file):
-                    preview = self.link_preview(file)
-                    break
-
+            preview = next(
+                (
+                    self.link_preview(file)
+                    for file in previews
+                    if os.path.isfile(file)
+                ),
+                None,
+            )
             yield {
                 "name": name,
                 "filename": path,
                 "preview": preview,
                 "search_term": self.search_terms_from_path(path),
-                "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
-                "local_preview": path + ".png",
+                "prompt": f'{json.dumps(f"<hypernet:{name}:")} + opts.extra_networks_default_multiplier + '
+                + json.dumps(">"),
+                "local_preview": f"{path}.png",
             }
 
     def allowed_directories_for_previews(self):

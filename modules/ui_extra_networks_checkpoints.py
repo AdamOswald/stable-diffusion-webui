@@ -17,21 +17,24 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         checkpoint: sd_models.CheckpointInfo
         for name, checkpoint in sd_models.checkpoints_list.items():
             path, ext = os.path.splitext(checkpoint.filename)
-            previews = [path + ".png", path + ".preview.png"]
+            previews = [f"{path}.png", f"{path}.preview.png"]
 
-            preview = None
-            for file in previews:
-                if os.path.isfile(file):
-                    preview = self.link_preview(file)
-                    break
-
+            preview = next(
+                (
+                    self.link_preview(file)
+                    for file in previews
+                    if os.path.isfile(file)
+                ),
+                None,
+            )
             yield {
                 "name": checkpoint.name_for_extra,
                 "filename": path,
                 "preview": preview,
-                "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
-                "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
-                "local_preview": path + ".png",
+                "search_term": f"{self.search_terms_from_path(checkpoint.filename)} "
+                + (checkpoint.sha256 or ""),
+                "onclick": f'"{html.escape(f"""return selectCheckpoint({json.dumps(name)})""")}"',
+                "local_preview": f"{path}.png",
             }
 
     def allowed_directories_for_previews(self):

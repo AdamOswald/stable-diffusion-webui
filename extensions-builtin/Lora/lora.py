@@ -114,41 +114,40 @@ def load_lora(name, filename):
 
         module.to(device=devices.device, dtype=devices.dtype)
 
-        if lora_key == "lora_up.weight":
-            lora_module.up = module
-        elif lora_key == "lora_down.weight":
+        if lora_key == "lora_down.weight":
             lora_module.down = module
+        elif lora_key == "lora_up.weight":
+            lora_module.up = module
         else:
             assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
 
-    if len(keys_failed_to_match) > 0:
+    if keys_failed_to_match:
         print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
 
     return lora
 
 
 def load_loras(names, multipliers=None):
-    already_loaded = {}
-
-    for lora in loaded_loras:
-        if lora.name in names:
-            already_loaded[lora.name] = lora
-
+    already_loaded = {
+        lora.name: lora for lora in loaded_loras if lora.name in names
+    }
     loaded_loras.clear()
 
     loras_on_disk = [available_loras.get(name, None) for name in names]
-    if any([x is None for x in loras_on_disk]):
+    if any(x is None for x in loras_on_disk):
         list_available_loras()
 
         loras_on_disk = [available_loras.get(name, None) for name in names]
 
     for i, name in enumerate(names):
-        lora = already_loaded.get(name, None)
+        lora = already_loaded.get(name)
 
         lora_on_disk = loras_on_disk[i]
-        if lora_on_disk is not None:
-            if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
-                lora = load_lora(name, lora_on_disk.filename)
+        if lora_on_disk is not None and (
+            lora is None
+            or os.path.getmtime(lora_on_disk.filename) > lora.mtime
+        ):
+            lora = load_lora(name, lora_on_disk.filename)
 
         if lora is None:
             print(f"Couldn't find Lora with name {name}")

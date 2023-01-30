@@ -198,7 +198,7 @@ class State:
         self.current_image_sampling_step = 0
 
     def dict(self):
-        obj = {
+        return {
             "skipped": self.skipped,
             "interrupted": self.interrupted,
             "job": self.job,
@@ -208,8 +208,6 @@ class State:
             "sampling_step": self.sampling_step,
             "sampling_steps": self.sampling_steps,
         }
-
-        return obj
 
     def begin(self):
         self.sampling_step = 0
@@ -306,36 +304,87 @@ hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 
 options_templates = {}
 
-options_templates.update(options_section(('saving-images', "Saving images/grids"), {
-    "samples_save": OptionInfo(True, "Always save all generated images"),
-    "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
-    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
-
-    "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "grid_format": OptionInfo('png', 'File format for grids'),
-    "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
-    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
-    "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
-    "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
-    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "export_for_4chan": OptionInfo(True, "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG"),
-
-    "use_original_name_batch": OptionInfo(False, "Use original name for output filename during batch process in extras tab"),
-    "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
-    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
-
-    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
-    "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
-
-}))
+options_templates |= options_section(
+    ('saving-images', "Saving images/grids"),
+    {
+        "samples_save": OptionInfo(True, "Always save all generated images"),
+        "samples_format": OptionInfo('png', 'File format for images'),
+        "samples_filename_pattern": OptionInfo(
+            "", "Images filename pattern", component_args=hide_dirs
+        ),
+        "save_images_add_number": OptionInfo(
+            True,
+            "Add number to filename when saving",
+            component_args=hide_dirs,
+        ),
+        "grid_save": OptionInfo(True, "Always save all generated image grids"),
+        "grid_format": OptionInfo('png', 'File format for grids'),
+        "grid_extended_filename": OptionInfo(
+            False,
+            "Add extended info (seed, prompt) to filename when saving grid",
+        ),
+        "grid_only_if_multiple": OptionInfo(
+            True, "Do not save grids consisting of one picture"
+        ),
+        "grid_prevent_empty_spots": OptionInfo(
+            False, "Prevent empty spots in grid (when set to autodetect)"
+        ),
+        "n_rows": OptionInfo(
+            -1,
+            "Grid row count; use -1 for autodetect and 0 for it to be same as batch size",
+            gr.Slider,
+            {"minimum": -1, "maximum": 16, "step": 1},
+        ),
+        "enable_pnginfo": OptionInfo(
+            True,
+            "Save text information about generation parameters as chunks to png files",
+        ),
+        "save_txt": OptionInfo(
+            False,
+            "Create a text file next to every image with generation parameters.",
+        ),
+        "save_images_before_face_restoration": OptionInfo(
+            False, "Save a copy of image before doing face restoration."
+        ),
+        "save_images_before_highres_fix": OptionInfo(
+            False, "Save a copy of image before applying highres fix."
+        ),
+        "save_images_before_color_correction": OptionInfo(
+            False,
+            "Save a copy of image before applying color correction to img2img results",
+        ),
+        "jpeg_quality": OptionInfo(
+            80,
+            "Quality for saved jpeg images",
+            gr.Slider,
+            {"minimum": 1, "maximum": 100, "step": 1},
+        ),
+        "export_for_4chan": OptionInfo(
+            True,
+            "If PNG image is larger than 4MB or any dimension is larger than 4000, downscale and save copy as JPG",
+        ),
+        "use_original_name_batch": OptionInfo(
+            False,
+            "Use original name for output filename during batch process in extras tab",
+        ),
+        "use_upscaler_name_as_suffix": OptionInfo(
+            False, "Use upscaler name as filename suffix in the extras tab"
+        ),
+        "save_selected_only": OptionInfo(
+            True, "When using 'Save' button, only save a single selected image"
+        ),
+        "do_not_add_watermark": OptionInfo(
+            False, "Do not add watermark to images"
+        ),
+        "temp_dir": OptionInfo(
+            "", "Directory for temporary images; leave empty for default"
+        ),
+        "clean_temp_dir_at_start": OptionInfo(
+            False,
+            "Cleanup non-default temporary directory when starting webui",
+        ),
+    },
+)
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
     "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
@@ -432,11 +481,32 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
     "deepbooru_filter_tags": OptionInfo("", "filter out those tags from deepbooru output (separated by comma)"),
 }))
 
-options_templates.update(options_section(('extra_networks', "Extra Networks"), {
-    "extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, {"choices": ["cards", "thumbs"]}),
-    "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": [""] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
-}))
+options_templates.update(
+    options_section(
+        ('extra_networks', "Extra Networks"),
+        {
+            "extra_networks_default_view": OptionInfo(
+                "cards",
+                "Default view for Extra Networks",
+                gr.Dropdown,
+                {"choices": ["cards", "thumbs"]},
+            ),
+            "extra_networks_default_multiplier": OptionInfo(
+                1.0,
+                "Multiplier for extra networks",
+                gr.Slider,
+                {"minimum": 0.0, "maximum": 1.0, "step": 0.01},
+            ),
+            "sd_hypernetwork": OptionInfo(
+                "None",
+                "Add hypernetwork to prompt",
+                gr.Dropdown,
+                lambda: {"choices": [""] + list(hypernetworks.keys())},
+                refresh=reload_hypernetworks,
+            ),
+        },
+    )
+)
 
 options_templates.update(options_section(('ui', "User interface"), {
     "return_grid": OptionInfo(True, "Show grid in results for web"),
@@ -505,27 +575,28 @@ class Options:
         self.data = {k: v.default for k, v in self.data_labels.items()}
 
     def __setattr__(self, key, value):
-        if self.data is not None:
-            if key in self.data or key in self.data_labels:
-                assert not cmd_opts.freeze_settings, "changing settings is disabled"
+        if (
+            self.data is None
+            or key not in self.data
+            and key not in self.data_labels
+        ):
+            return super(Options, self).__setattr__(key, value)
+        assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
-                info = opts.data_labels.get(key, None)
-                comp_args = info.component_args if info else None
-                if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
-                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+        info = opts.data_labels.get(key, None)
+        comp_args = info.component_args if info else None
+        if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
+            raise RuntimeError(f"not possible to set {key} because it is restricted")
 
-                if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+        if cmd_opts.hide_ui_dir_config and key in restricted_opts:
+            raise RuntimeError(f"not possible to set {key} because it is restricted")
 
-                self.data[key] = value
-                return
-
-        return super(Options, self).__setattr__(key, value)
+        self.data[key] = value
+        return
 
     def __getattr__(self, item):
-        if self.data is not None:
-            if item in self.data:
-                return self.data[item]
+        if self.data is not None and item in self.data:
+            return self.data[item]
 
         if item in self.data_labels:
             return self.data_labels[item].default
@@ -606,7 +677,9 @@ class Options:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
 
-        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+        self.data_labels = dict(
+            sorted(settings_items, key=lambda x: section_ids[x[1].section])
+        )
 
     def cast_value(self, key, value):
         """casts an arbitrary to the same type as this setting's value with key

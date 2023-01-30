@@ -69,7 +69,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f'{filename}.optim')
 
     def checksum(self):
         if self.cached_checksum is not None:
@@ -149,10 +149,9 @@ class EmbeddingDatabase:
             embed_image = Image.open(path)
             if hasattr(embed_image, 'text') and 'sd-ti-embedding' in embed_image.text:
                 data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
-                name = data.get('name', name)
             else:
                 data = extract_image_data_embed(embed_image)
-                name = data.get('name', name)
+            name = data.get('name', name)
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
         elif ext in ['.SAFETENSORS']:
@@ -186,7 +185,7 @@ class EmbeddingDatabase:
         embedding.shape = vec.shape[-1]
         embedding.filename = path
 
-        if self.expected_shape == -1 or self.expected_shape == embedding.shape:
+        if self.expected_shape in [-1, embedding.shape]:
             self.register_embedding(embedding, shared.sd_model)
         else:
             self.skipped_embeddings[name] = embedding
@@ -211,12 +210,10 @@ class EmbeddingDatabase:
 
     def load_textual_inversion_embeddings(self, force_reload=False):
         if not force_reload:
-            need_reload = False
-            for path, embdir in self.embedding_dirs.items():
-                if embdir.has_changed():
-                    need_reload = True
-                    break
-
+            need_reload = any(
+                embdir.has_changed()
+                for path, embdir in self.embedding_dirs.items()
+            )
             if not need_reload:
                 return
 
@@ -243,11 +240,14 @@ class EmbeddingDatabase:
         if possible_matches is None:
             return None, None
 
-        for ids, embedding in possible_matches:
-            if tokens[offset:offset + len(ids)] == ids:
-                return embedding, len(ids)
-
-        return None, None
+        return next(
+            (
+                (embedding, len(ids))
+                for ids, embedding in possible_matches
+                if tokens[offset : offset + len(ids)] == ids
+            ),
+            (None, None),
+        )
 
 
 def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
@@ -284,7 +284,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
     if step % shared.opts.training_write_csv_every != 0:
         return
-    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
+    write_csv_header = not os.path.exists(os.path.join(log_directory, filename))
 
     with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
         csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
