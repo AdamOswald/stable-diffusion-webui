@@ -1,21 +1,17 @@
-import sys, os, shlex
+import sys
 import contextlib
 import torch
 from modules import errors
-from packaging import version
+
+if sys.platform == "darwin":
+    from modules import mac_specific
 
 
-# has_mps is only available in nightly pytorch (for now) and macOS 12.3+.
-# check `getattr` and try it for compatibility
 def has_mps() -> bool:
-    if not getattr(torch, 'has_mps', False):
+    if sys.platform != "darwin":
         return False
-    try:
-        torch.zeros(1).to(torch.device("mps"))
-        return True
-    except Exception:
-        return False
-
+    else:
+        return mac_specific.has_mps
 
 def extract_device_id(args, name):
     return next((args[x + 1] for x in range(len(args)) if name in args[x]), None)
