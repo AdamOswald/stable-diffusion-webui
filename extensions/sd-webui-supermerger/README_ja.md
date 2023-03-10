@@ -3,25 +3,17 @@
 - Merge models can be loaded directly for generation without saving
 
 # Recent Update
-すべての更新履歴は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/ver2/changelog.md)にあります。  
-All updates can be found [here](https://github.com/hako-mikan/sd-webui-supermerger/blob/ver2/changelog.md).
+すべての更新履歴は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/changelog.md)にあります。  
+All updates can be found [here](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/changelog.md).
+
+### update 2023.03.03.0145(JST)
+- XYプロットに新たな軸「mbw alpha」「mbw beta」「mbw alpha and beta」を追加しました。
+
+### update 2023.03.02.1900(JST)
+- Elemental Merge機能を実装しました。詳細は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_ja.md)
 
 ### update 2023.02.20.2000(JST)
 "diffusers"をインポートするタイミングを変更しました。このアップデートにより、環境によっては"diffusers"のインストールなしに起動できるようになります。
-
-### bug fix 2023.02.19.2330(JST)
-いくつかのバグが修正されました
-- LOWRAMオプション有効時にエラーになる問題
-- Linuxでエラーになる問題
-- XY plotが正常に終了しない問題
-- 未ロードのモデルを設定時にエラーになる問題
-
-### update to version 3 2023.02.17.2020(JST)
-- LoRA関係の機能を追加しました
-- Logを保存し、設定を呼び出せるようになりました
-- safetensors,fp16形式での保存に対応しました
-- weightのプリセットに対応しました
-- XYプロットの予約が可能になりました
 
 diffusersのインストールが必要になりました。windowsの場合はweb-uiのフォルダでコマンドプロンプトから"pip install diffusers"を打つことでインストールできる場合がありますが環境によります。
 # 
@@ -89,7 +81,13 @@ IN01,OUT10 OUT11, OUT03-OUT06,OUT07-OUT11,NOT M00 OUT03-OUT06
 BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01,OUT02,OUT03,OUT04,OUT05,OUT06,OUT07,OUT08,OUT09,OUT10,OUT11
 
 ### XYプロットの予約
-Reserve XY plotボタンはすぐさまプロットを実行せず、ボタンを押したときの設定のXYプロットの実行を予約します。予約したXYプロットは通常のXYプロットが終了した後か、ReservationタブのStart XY plotボタンを押すと実行が開始されます。予約はXYプロット実行時・未実行時いつでも可能です。予約一覧は自動更新されないのでリロードボタンを使用してください。エラー発生時はそのプロットを破棄して次の予約を実行します。すべての予約が終了するまで画像は表示されませんが、Finishedになったものについてはグリッドの生成は終わっているので、Image Browser等で見ることが可能です。
+Reserve XY plotボタンはすぐさまプロットを実行せず、ボタンを押したときの設定のXYプロットの実行を予約します。予約したXYプロットは通常のXYプロットが終了した後か、ReservationタブのStart XY plotボタンを押すと実行が開始されます。予約はXYプロット実行時・未実行時いつでも可能です。予約一覧は自動更新されないのでリロードボタンを使用してください。エラー発生時はそのプロットを破棄して次の予約を実行します。すべての予約が終了するまで画像は表示されませんが、Finishedになったものについてはグリッドの生成は終わっているので、Image Browser等で見ることが可能です。  
+「|」を使用することで任意の場所で予約へ移動することも可能です。  
+0.1,0.2,0.3,0.4,0.5|0.6,0.7,0.8,0.9,1.0とすると  
+
+0.1,0.2,0.3,0.4,0.5  
+0.6,0.7,0.8,0.9,1.0  
+というふたつの予約に分割され実行されます。これは要素が多すぎてグリッドが大きくなってしまう場合などに有効でしょう。
 
 ### キャッシュについて
 モデルをメモリ上に保存することにより連続マージなどを高速化することができます。
@@ -108,6 +106,7 @@ LoRA名1:マージ比率1:階層,LoRA名2:階層,マージ比率2,LoRA名3:マ�
 ### Make LoRA
 ふたつのモデルの差分からLoRAを生成します。
 demensionを指定すると指定されたdimensionで作製されます。無指定の場合は128で作製します。
+alphaとbetaによって配合比率を調整することができます。(alpha x Model_A - beta x Model B)　alpha, beta = 1が通常のLoRA作成となります。
 
 ### merge LoRAs
 ひとつまたは複数のLoRA同士をマージします。kohya-ss氏の最新のスクリプトを使用しているので、dimensionの異なるLoRA同氏もマージ可能ですが、dimensionの変換の際はLoRAの再計算を行うため、生成される画像が大きく異なる可能性があることに注意してください。  

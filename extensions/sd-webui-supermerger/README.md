@@ -5,24 +5,21 @@
 日本語は[こちら](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/README_ja.md)
 
 # Recent Update
-All updates can be found [here](https://github.com/hako-mikan/sd-webui-supermerger/blob/ver2/changelog.md)  
+All updates can be found [here](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/changelog.md)  
+
+### bug fix 2023.03.06.0145
+- fixed : Add difference function was broken
+- Add differenceが正常に動作しない問題を解決しました
+
+### update 2023.03.03.0145(JST)
+- Add new XY type "mbw alpha","mbw beta","mbw alpha and beta"
+
+### update 2023.03.02.1900(JST)
+- Elemental Merge feature added. Details [here](https://github.com/hako-mikan/sd-webui-supermerger/blob/main/elemental_en.md).
+
 
 ### update 2023.02.20.2000(JST)
 The timing of importing "diffusers" has been changed. With this update, some environments can be started without installing "diffusers".
-
-### bug fix 2023.02.19.2330(JST)
-Several bugs have been fixed
-- Error when LOWRAM option is enabled
-- Error on Linux
-- XY plot did not finish properly
-- Error when setting unused models
-
-### update to version 3 2023.02.17.2020(JST)
-- Added LoRA related functions
-- Logs can now be saved and settings can be recalled.
-- Save in safetensors and fp16 format is now supported.
-- Weight presets are now supported.
-- Reservation of XY plots is now possible.
 
 diffusers must now be installed. on windows, this can be done by typing "pip install diffusers" at the command prompt in the web-ui folder, but it depends on your environment.
 
@@ -91,6 +88,13 @@ BASE,IN00,IN01,IN02,IN03,IN04,IN05,IN06,IN07,IN08,IN09,IN10,IN11,M00,OUT00,OUT01
 ### Reserve XY plot
 The Reserve XY plot button reserves the execution of an XY plot for the setting at the time the button is pressed, instead of immediately executing the plot. The reserved XY plot will be executed after the normal XY plot is completed or by pressing the Start XY plot button on the Reservation tab. Reservations can be made at any time during the execution or non-execution of an XY plot. The reservation list is not automatically updated, so use the Reload button. If an error occurs, the plot is discarded and the next reservation is executed. Images will not be displayed until all reservations are finished, but those that have been marked "Finished" have finished generating the grid and can be viewed in the Image Browser or other applications.
 
+It is also possible to move to an appointment at any location by using "|".  
+Inputing "0.1,0.2,0.3,0.4,0.5|0.6,0.7,0.8,0.9,1.0"
+
+0.1,0.2,0.3,0.4,0.5  
+0.6,0.7,0.8,0.9,1.0  
+The grid is divided into two reservations, "0.1,0.2,0.3,0.4,0.5" and "0.6,0.7,0.8,0.9,1.0" executed. This may be useful when there are too many elements and the grid becomes too large.
+
 ### About Cache
 By storing models in memory, continuous merging and other operations can be sped up.
 Cache settings can be configured from web-ui's setting menu.
@@ -108,6 +112,7 @@ LoRA can also be used alone. The ":block" part can be omitted. The ratio can be 
 ### Make LoRA
 Generates a LoRA from the difference of two models.
 If you specify a demension, it will be created with the specified dimension. If no demension is specified, LoRAs are created with dim 128.
+The blend ratio can be adjusted by alpha and beta. (alpha x Model_A - beta x Model B) alpha, beta = 1 is the normal LoRA creation.
 
 ### merge LoRAs
 Merges one or more LoRAs. kohya-ss's latest script is used, so LoRAs with different dimensions can be merged, but note that the generated images may differ significantly because LoRAs are recalculated when dimensions are converted. 
