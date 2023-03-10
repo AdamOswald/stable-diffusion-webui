@@ -4,7 +4,9 @@ import math
 import os
 import gc
 import gradio as gr
+from torchmetrics import Precision
 import modules.shared as shared
+import gc
 from safetensors.torch import load_file, save_file
 from typing import List
 from tqdm import tqdm
@@ -56,16 +58,18 @@ def on_ui_tabs():
         sml_submit_result = gr.Textbox(label="Message")
         with gr.Row().style(equal_height=False):
             sml_cpmerge = gr.Button(elem_id="model_merger_merge", value="Merge to Checkpoint",variant='primary')
-            sml_makelora = gr.Button(elem_id="model_merger_merge", value="Make LoRA (A-B)",variant='primary')
+            sml_makelora = gr.Button(elem_id="model_merger_merge", value="Make LoRA (alpha * A - beta * B)",variant='primary')
             sml_model_a = gr.Dropdown(sd_models.checkpoint_tiles(),elem_id="model_converter_model_name",label="Checkpoint A",interactive=True)
             create_refresh_button(sml_model_a, sd_models.list_models,lambda: {"choices": sd_models.checkpoint_tiles()},"refresh_checkpoint_Z")
             sml_model_b = gr.Dropdown(sd_models.checkpoint_tiles(),elem_id="model_converter_model_name",label="Checkpoint B",interactive=True)
-            create_refresh_button(sml_model_a, sd_models.list_models,lambda: {"choices": sd_models.checkpoint_tiles()},"refresh_checkpoint_Z")
+            create_refresh_button(sml_model_b, sd_models.list_models,lambda: {"choices": sd_models.checkpoint_tiles()},"refresh_checkpoint_Z")
         with gr.Row().style(equal_height=False):
             sml_merge = gr.Button(elem_id="model_merger_merge", value="Merge LoRAs",variant='primary')
+            alpha = gr.Slider(label="alpha", minimum=-1.0, maximum=2, step=0.001, value=1)
+            beta = gr.Slider(label="beta", minimum=-1.0, maximum=2, step=0.001, value=1)
+        with gr.Row().style(equal_height=False):
             sml_settings = gr.CheckboxGroup(["same to Strength", "overwrite"], label="settings")
-            alpha = gr.Slider(label="alpha", minimum=-1.0, maximum=2, step=0.001, value=0.5)
-            beta = gr.Slider(label="beta", minimum=-1.0, maximum=2, step=0.001, value=0.25)
+            precision = gr.Radio(label = "save precision",choices=["float","fp16","bf16"],value = "fp16",type="value")
         with gr.Row().style(equal_height=False):
           sml_dim = gr.Radio(label = "remake dimension",choices = ["no","auto",*[2**(x+2) for x in range(9)]],value = "no",type = "value") 
           sml_filename = gr.Textbox(label="filename(option)",lines=1,visible =True,interactive  = True)  
@@ -79,19 +83,19 @@ def on_ui_tabs():
 
         sml_merge.click(
             fn=lmerge,
-            inputs=[sml_loranames,sml_loraratios,sml_settings,sml_filename,sml_dim],
+            inputs=[sml_loranames,sml_loraratios,sml_settings,sml_filename,sml_dim,precision],
             outputs=[sml_submit_result]
         )
 
         sml_makelora.click(
             fn=makelora,
-            inputs=[sml_model_a,sml_model_b,sml_dim,sml_filename,sml_settings,alpha,beta],
+            inputs=[sml_model_a,sml_model_b,sml_dim,sml_filename,sml_settings,alpha,beta,precision],
             outputs=[sml_submit_result]
         )
 
         sml_cpmerge.click(
             fn=pluslora,
-            inputs=[sml_loranames,sml_loraratios,sml_settings,sml_filename,sml_model_a],
+            inputs=[sml_loranames,sml_loraratios,sml_settings,sml_filename,sml_model_a,precision],
             outputs=[sml_submit_result]
         )
         llist ={}
@@ -143,20 +147,11 @@ def on_ui_tabs():
         sml_loras.change(fn=llister,inputs=[sml_loras],outputs=[sml_loranames])     
         sml_dims.change(fn=dimselector,inputs=[sml_dims],outputs=[sml_loras])  
 
-def fullpathfromname(name):
-    if hash == "" or hash ==[]: return ""
-    checkpoint_info = sd_models.get_closet_checkpoint_match(name)
-    return checkpoint_info.filename
-
-def makeloraname(model_a,model_b):
-    model_a=filenamecutter(model_a)
-    model_b=filenamecutter(model_b)
-    return "lora_"+model_a+"-"+model_b
-
-def makelora(model_a,model_b,dim,saveto,settings,alpha,beta):
+def makelora(model_a,model_b,dim,saveto,settings,alpha,beta,precision):
     print("make LoRA start")
     if model_a == "" or model_b =="":
       return "ERROR: No model Selected"
+    gc.collect()
 
     if saveto =="" : saveto = makeloraname(model_a,model_b)
     if not ".safetensors" in saveto :saveto  += ".safetensors"
@@ -168,10 +163,10 @@ def makelora(model_a,model_b,dim,saveto,settings,alpha,beta):
         print(_err_msg)
         return _err_msg
 
-    svd(fullpathfromname(model_a),fullpathfromname(model_b),False,dim,"float",saveto,alpha,beta)
+    svd(fullpathfromname(model_a),fullpathfromname(model_b),False,dim,precision,saveto,alpha,beta)
     return f"saved to {saveto}"
 
-def lmerge(loranames,loraratioss,settings,filename,dim):
+def lmerge(loranames,loraratioss,settings,filename,dim,precision):
     import lora
     loras_on_disk = [lora.available_loras.get(name, None) for name in loranames]
     if any([x is None for x in loras_on_disk]):
@@ -228,53 +223,10 @@ def lmerge(loranames,loraratioss,settings,filename,dim):
         print(_err_msg)
         return _err_msg
 
-    save_to_file(filename,sd,sd, torch.float)
+    save_to_file(filename,sd,sd, str_to_dtype(precision))
     return "saved : "+filename
 
-def save_to_file(file_name, model, state_dict, dtype):
-    if dtype is not None:
-        for key in list(state_dict.keys()):
-            if type(state_dict[key]) == torch.Tensor:
-                state_dict[key] = state_dict[key].to(dtype)
-
-    if os.path.splitext(file_name)[1] == '.safetensors':
-        save_file(model, file_name)
-    else:
-        torch.save(model, file_name)
-
-re_digits = re.compile(r"\d+")
-re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
-re_unet_mid_blocks = re.compile(r"lora_unet_mid_block_attentions_(\d+)_(.+)")
-re_unet_up_blocks = re.compile(r"lora_unet_up_blocks_(\d+)_attentions_(\d+)_(.+)")
-re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
-
-def convert_diffusers_name_to_compvis(key):
-    def match(match_list, regex):
-        r = re.match(regex, key)
-        if not r:
-            return False
-
-        match_list.clear()
-        match_list.extend([int(x) if re.match(re_digits, x) else x for x in r.groups()])
-        return True
-
-    m = []
-
-    if match(m, re_unet_down_blocks):
-        return f"diffusion_model_input_blocks_{1 + m[0] * 3 + m[1]}_1_{m[2]}"
-
-    if match(m, re_unet_mid_blocks):
-        return f"diffusion_model_middle_block_1_{m[1]}"
-
-    if match(m, re_unet_up_blocks):
-        return f"diffusion_model_output_blocks_{m[0] * 3 + m[1]}_1_{m[2]}"
-
-    if match(m, re_text_block):
-        return f"transformer_text_model_encoder_layers_{m[0]}_{m[1]}"
-
-    return key
-
-def pluslora(lnames,loraratios,settings,output,model):
+def pluslora(lnames,loraratios,settings,output,model,precision):
     if model == []:
       return "ERROR: No model Selected"
     if lnames == "":
@@ -325,7 +277,7 @@ def pluslora(lnames,loraratios,settings,output,model):
 
     for name,filename, lwei in zip(names,filenames, lweis):
       print(f"loading: {name}")
-      lora_sd = load_state_dict(filename, torch.float64)
+      lora_sd = load_state_dict(filename, torch.float)
 
       print(f"merging..." ,lwei)
       for key in lora_sd.keys():
@@ -361,37 +313,85 @@ def pluslora(lnames,loraratios,settings,output,model):
                                         ).unsqueeze(2).unsqueeze(3) * scale
           theta_0[keychanger[msd_key]] = torch.nn.Parameter(weight)
     #usemodelgen(theta_0,model)
+    settings.append(precision)
     result = savemodel(theta_0,dname,output,settings,model)
     del theta_0
     gc.collect()
     return result
 
+def save_to_file(file_name, model, state_dict, dtype):
+    if dtype is not None:
+        for key in list(state_dict.keys()):
+            if type(state_dict[key]) == torch.Tensor:
+                state_dict[key] = state_dict[key].to(dtype)
+
+    if os.path.splitext(file_name)[1] == '.safetensors':
+        save_file(model, file_name)
+    else:
+        torch.save(model, file_name)
+
+re_digits = re.compile(r"\d+")
+re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
+re_unet_mid_blocks = re.compile(r"lora_unet_mid_block_attentions_(\d+)_(.+)")
+re_unet_up_blocks = re.compile(r"lora_unet_up_blocks_(\d+)_attentions_(\d+)_(.+)")
+re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
+
+def convert_diffusers_name_to_compvis(key):
+    def match(match_list, regex):
+        r = re.match(regex, key)
+        if not r:
+            return False
+
+        match_list.clear()
+        match_list.extend([int(x) if re.match(re_digits, x) else x for x in r.groups()])
+        return True
+
+    m = []
+
+    if match(m, re_unet_down_blocks):
+        return f"diffusion_model_input_blocks_{1 + m[0] * 3 + m[1]}_1_{m[2]}"
+
+    if match(m, re_unet_mid_blocks):
+        return f"diffusion_model_middle_block_1_{m[1]}"
+
+    if match(m, re_unet_up_blocks):
+        return f"diffusion_model_output_blocks_{m[0] * 3 + m[1]}_1_{m[2]}"
+
+    if match(m, re_text_block):
+        return f"transformer_text_model_encoder_layers_{m[0]}_{m[1]}"
+
+    return key
+
 CLAMP_QUANTILE = 0.99
 MIN_DIFF = 1e-6
 
-def svd(model_a,model_b,v2,dim,save_precision,save_to,alpha,beta):
-  def str_to_dtype(p):
-    if p == 'float':
-      return torch.float
-    if p == 'fp16':
-      return torch.float16
-    if p == 'bf16':
-      return torch.bfloat16
-    return None
+def str_to_dtype(p):
+  if p == 'float':
+    return torch.float
+  if p == 'fp16':
+    return torch.float16
+  if p == 'bf16':
+    return torch.bfloat16
+  return None
 
+def svd(model_a,model_b,v2,dim,save_precision,save_to,alpha,beta):
   save_dtype = str_to_dtype(save_precision)
 
-  print(f"loading SD model : {model_b}")
-  text_encoder_o, _, unet_o = load_models_from_stable_diffusion_checkpoint(v2, model_b)
-  print(f"loading SD model : {model_a}")
-  text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
+  if model_a == model_b:
+    text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
+    text_encoder_o, _, unet_o = text_encoder_t, _, unet_t
+  else:
+    print(f"loading SD model : {model_b}")
+    text_encoder_o, _, unet_o = load_models_from_stable_diffusion_checkpoint(v2, model_b)
+    
+    print(f"loading SD model : {model_a}")
+    text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
 
   # create LoRA network to extract weights: Use dim (rank) as alpha
   lora_network_o = create_network(1.0, dim, dim, None, text_encoder_o, unet_o)
   lora_network_t = create_network(1.0, dim, dim, None, text_encoder_t, unet_t)
   assert len(lora_network_o.text_encoder_loras) == len(
       lora_network_t.text_encoder_loras), f"model version is different (SD1.x vs SD2.x) / それぞれのモデルのバージョンが違います（SD1.xベースとSD2.xベース） "
-
   # get diffs
   diffs = {}
   text_encoder_different = False
@@ -417,7 +417,7 @@ def svd(model_a,model_b,v2,dim,save_precision,save_to,alpha,beta):
     lora_name = lora_o.lora_name
     module_o = lora_o.org_module
     module_t = lora_t.org_module
-    diff = module_t.weight - module_o.weight
+    diff = alpha*module_t.weight - beta*module_o.weight
     diff = diff.float()
 
     diffs[lora_name] = diff
@@ -530,8 +530,7 @@ class LoRAModule(torch.nn.Module):
 def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, unet, **kwargs):
   if network_dim is None:
     network_dim = 4                     # default
-  network = LoRANetwork(text_encoder, unet, multiplier=multiplier, lora_dim=network_dim, alpha=network_alpha)
-  return network
+  return LoRANetwork(text_encoder, unet, multiplier=multiplier, lora_dim=network_dim, alpha=network_alpha)
 
 class LoRANetwork(torch.nn.Module):
   UNET_TARGET_REPLACE_MODULE = ["Transformer2DModel", "Attention"]
@@ -843,7 +842,6 @@ def merge_lora_models(models, ratios,sets):
         merged_sd[key] = merged_sd[key] + lora_sd[key] * scale
       else:
         merged_sd[key] = lora_sd[key] * scale
-
   
   # set alpha to sd
   for lora_module_name, alpha in base_alphas.items():
@@ -854,3 +852,13 @@ def merge_lora_models(models, ratios,sets):
   print(f"dim: {list(set(base_dims.values()))}, alpha: {list(set(base_alphas.values()))}")
 
   return merged_sd
+
+def fullpathfromname(name):
+    if hash == "" or hash ==[]: return ""
+    checkpoint_info = sd_models.get_closet_checkpoint_match(name)
+    return checkpoint_info.filename
+
+def makeloraname(model_a,model_b):
+    model_a=filenamecutter(model_a)
+    model_b=filenamecutter(model_b)
+    return "lora_"+model_a+"-"+model_b
