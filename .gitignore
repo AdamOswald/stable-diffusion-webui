@@ -1,5 +1,4 @@
 __pycache__
-*.safetensors
 *.pth
 /venv
 /GFPGANv1.3.pth
