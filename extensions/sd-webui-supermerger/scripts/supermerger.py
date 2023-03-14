@@ -68,7 +68,8 @@ def on_ui_tabs():
         with gr.Tab("Merge", elem_id="tab_merge"):
             with gr.Row().style(equal_height=False):
                 with gr.Column(scale=3):
-                    gr.HTML(value="<p>Merge models and load it for generation</p>")
+                    gr.HTML(
+                        value="<p>Merge models and load it for generation</p>")
 
                     with gr.Row():
                         model_a = gr.Dropdown(
@@ -149,19 +150,22 @@ def on_ui_tabs():
                             value="Merge&Gen",
                             variant="primary",
                         )
-                        gen = gr.Button(
-                            elem_id="model_merger_merge", value="Gen", variant="primary"
-                        )
+                        gen = gr.Button(elem_id="model_merger_merge",
+                                        value="Gen",
+                                        variant="primary")
                     with gr.Row():
                         with gr.Column(scale=4):
                             save_sets = gr.CheckboxGroup(
-                                ["save model", "overwrite", "safetensors", "fp16"],
+                                [
+                                    "save model", "overwrite", "safetensors",
+                                    "fp16"
+                                ],
                                 label="save settings",
                             )
                         with gr.Column(scale=2):
                             id_sets = gr.CheckboxGroup(
-                                ["image", "PNG info"], label="write merged model ID to"
-                            )
+                                ["image", "PNG info"],
+                                label="write merged model ID to")
                     with gr.Row():
                         with gr.Column(min_width=50, scale=2):
                             with gr.Row():
@@ -177,8 +181,8 @@ def on_ui_tabs():
                         with gr.Column(min_width=50, scale=1):
                             with gr.Row():
                                 s_reverse = gr.Button(
-                                    value="Set from ID(-1 for last)", variant="primary"
-                                )
+                                    value="Set from ID(-1 for last)",
+                                    variant="primary")
                     with gr.Accordion("Elemental Merge", open=False):
                         with gr.Row():
                             esettings1 = gr.CheckboxGroup(
@@ -189,7 +193,8 @@ def on_ui_tabs():
                             )
                         with gr.Row():
                             deep = gr.Textbox(
-                                label="Blocks:Element:Ratio,Blocks:Element:Ratio,...",
+                                label=
+                                "Blocks:Element:Ratio,Blocks:Element:Ratio,...",
                                 lines=2,
                                 value="",
                             )
@@ -234,9 +239,8 @@ def on_ui_tabs():
                             value="Stop XY",
                             variant="primary",
                         )
-                        s_reserve1 = gr.Button(
-                            value="Reserve XY Plot", variant="primary"
-                        )
+                        s_reserve1 = gr.Button(value="Reserve XY Plot",
+                                               variant="primary")
                     dtrue = gr.Checkbox(value=True, visible=False)
                     dfalse = gr.Checkbox(value=False, visible=False)
                     dummy_t = gr.Textbox(value="", visible=False)
@@ -270,11 +274,12 @@ def on_ui_tabs():
                 ]
 
                 with gr.Column(scale=2):
-                    currentmodel = gr.Textbox(label="Current Model", lines=1, value="")
+                    currentmodel = gr.Textbox(label="Current Model",
+                                              lines=1,
+                                              value="")
                     submit_result = gr.Textbox(label="Message")
                     mgallery, mgeninfo, mhtmlinfo, mhtmllog = create_output_panel(
-                        "txt2img", opts.outdir_txt2img_samples
-                    )
+                        "txt2img", opts.outdir_txt2img_samples)
             with gr.Row(visible=False) as row_inputers:
                 inputer = gr.Textbox(label="", lines=1, value="")
                 addtox = gr.Button(value="Add to Sequence X")
@@ -318,105 +323,165 @@ def on_ui_tabs():
                     )
                 with gr.Row():
                     weights_a = gr.Textbox(
-                        label="weights for alpha, base alpha,IN00,IN02,...IN11,M00,OUT00,...,OUT11",
-                        value="0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5",
+                        label=
+                        "weights for alpha, base alpha,IN00,IN02,...IN11,M00,OUT00,...,OUT11",
+                        value=
+                        "0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5",
                     )
                     weights_b = gr.Textbox(
-                        label="weights,for beta, base beta,IN00,IN02,...IN11,M00,OUT00,...,OUT11",
-                        value="0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2",
+                        label=
+                        "weights,for beta, base beta,IN00,IN02,...IN11,M00,OUT00,...,OUT11",
+                        value=
+                        "0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2",
                     )
                 with gr.Row():
-                    editweights = gr.Radio(
-                        label="edit", choices=["alpha", "beta"], value="alpha"
-                    )
-                    base = gr.Slider(
-                        label="Base", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in00 = gr.Slider(
-                        label="IN00", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in01 = gr.Slider(
-                        label="IN01", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in02 = gr.Slider(
-                        label="IN02", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in03 = gr.Slider(
-                        label="IN03", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
+                    editweights = gr.Radio(label="edit",
+                                           choices=["alpha", "beta"],
+                                           value="alpha")
+                    base = gr.Slider(label="Base",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in00 = gr.Slider(label="IN00",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in01 = gr.Slider(label="IN01",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in02 = gr.Slider(label="IN02",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in03 = gr.Slider(label="IN03",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
                 with gr.Row():
-                    in04 = gr.Slider(
-                        label="IN04", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in05 = gr.Slider(
-                        label="IN05", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in06 = gr.Slider(
-                        label="IN06", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in07 = gr.Slider(
-                        label="IN07", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in08 = gr.Slider(
-                        label="IN08", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in09 = gr.Slider(
-                        label="IN09", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
+                    in04 = gr.Slider(label="IN04",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in05 = gr.Slider(label="IN05",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in06 = gr.Slider(label="IN06",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in07 = gr.Slider(label="IN07",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in08 = gr.Slider(label="IN08",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in09 = gr.Slider(label="IN09",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
                 with gr.Row():
-                    in10 = gr.Slider(
-                        label="IN10", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    in11 = gr.Slider(
-                        label="IN11", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    mi00 = gr.Slider(
-                        label="M00", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou00 = gr.Slider(
-                        label="OUT00", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou01 = gr.Slider(
-                        label="OUT01", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou02 = gr.Slider(
-                        label="OUT02", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
+                    in10 = gr.Slider(label="IN10",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    in11 = gr.Slider(label="IN11",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    mi00 = gr.Slider(label="M00",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou00 = gr.Slider(label="OUT00",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou01 = gr.Slider(label="OUT01",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou02 = gr.Slider(label="OUT02",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
                 with gr.Row():
-                    ou03 = gr.Slider(
-                        label="OUT03", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou04 = gr.Slider(
-                        label="OUT04", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou05 = gr.Slider(
-                        label="OUT05", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou06 = gr.Slider(
-                        label="OUT06", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou07 = gr.Slider(
-                        label="OUT07", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou08 = gr.Slider(
-                        label="OUT08", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
+                    ou03 = gr.Slider(label="OUT03",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou04 = gr.Slider(label="OUT04",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou05 = gr.Slider(label="OUT05",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou06 = gr.Slider(label="OUT06",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou07 = gr.Slider(label="OUT07",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou08 = gr.Slider(label="OUT08",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
                 with gr.Row():
-                    ou09 = gr.Slider(
-                        label="OUT09", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou10 = gr.Slider(
-                        label="OUT10", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
-                    ou11 = gr.Slider(
-                        label="OUT11", minimum=0, maximum=1, step=0.01, value=0.5
-                    )
+                    ou09 = gr.Slider(label="OUT09",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou10 = gr.Slider(label="OUT10",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
+                    ou11 = gr.Slider(label="OUT11",
+                                     minimum=0,
+                                     maximum=1,
+                                     step=0.01,
+                                     value=0.5)
             with gr.Tab("Weights Presets"):
                 with gr.Row():
-                    s_reloadtext = gr.Button(value="Reload Presets", variant="primary")
-                    s_reloadtags = gr.Button(value="Reload Tags", variant="primary")
-                    s_savetext = gr.Button(value="Save Presets", variant="primary")
-                    s_openeditor = gr.Button(value="Open TextEditor", variant="primary")
+                    s_reloadtext = gr.Button(value="Reload Presets",
+                                             variant="primary")
+                    s_reloadtags = gr.Button(value="Reload Tags",
+                                             variant="primary")
+                    s_savetext = gr.Button(value="Save Presets",
+                                           variant="primary")
+                    s_openeditor = gr.Button(value="Open TextEditor",
+                                             variant="primary")
                 weightstags = gr.Textbox(
                     label="available",
                     lines=2,
@@ -424,18 +489,21 @@ def on_ui_tabs():
                     visible=True,
                     interactive=True,
                 )
-                wpresets = gr.TextArea(
-                    label="", value=weights_presets, visible=True, interactive=True
-                )
+                wpresets = gr.TextArea(label="",
+                                       value=weights_presets,
+                                       visible=True,
+                                       interactive=True)
 
             with gr.Tab("Reservation"):
                 with gr.Row():
-                    s_reserve = gr.Button(value="Reserve XY Plot", variant="primary")
-                    s_reloadreserve = gr.Button(value="Reloat List", variant="primary")
-                    s_startreserve = gr.Button(value="Start XY plot", variant="primary")
-                    s_delreserve = gr.Button(
-                        value="Delete list(-1 for all)", variant="primary"
-                    )
+                    s_reserve = gr.Button(value="Reserve XY Plot",
+                                          variant="primary")
+                    s_reloadreserve = gr.Button(value="Reloat List",
+                                                variant="primary")
+                    s_startreserve = gr.Button(value="Start XY plot",
+                                               variant="primary")
+                    s_delreserve = gr.Button(value="Delete list(-1 for all)",
+                                             variant="primary")
                     s_delnum = gr.Number(
                         value=1,
                         label="Delete num : ",
@@ -476,7 +544,8 @@ def on_ui_tabs():
                     value="Reload Cache List",
                     variant="primary",
                 )
-                unloadmodel = gr.Button(value="unload model", variant="primary")
+                unloadmodel = gr.Button(value="unload model",
+                                        variant="primary")
 
         # main ui end
 
@@ -485,32 +554,32 @@ def on_ui_tabs():
 
         with gr.Tab("History", elem_id="tab_history"):
             with gr.Row():
-                load_history = gr.Button(value="load_history", variant="primary")
+                load_history = gr.Button(value="load_history",
+                                         variant="primary")
                 searchwrods = gr.Textbox(label="", lines=1, value="")
                 search = gr.Button(value="search")
-                searchmode = gr.Radio(
-                    label="Search Mode", choices=["or", "and"], value="or", type="value"
-                )
+                searchmode = gr.Radio(label="Search Mode",
+                                      choices=["or", "and"],
+                                      value="or",
+                                      type="value")
             with gr.Row():
-                history = gr.Dataframe(
-                    headers=[
-                        "ID",
-                        "Time",
-                        "Name",
-                        "Weights alpha",
-                        "Weights beta",
-                        "Model A",
-                        "Model B",
-                        "Model C",
-                        "alpha",
-                        "beta",
-                        "Mode",
-                        "use MBW",
-                        "custum name",
-                        "save setting",
-                        "use ID",
-                    ],
-                )
+                history = gr.Dataframe(headers=[
+                    "ID",
+                    "Time",
+                    "Name",
+                    "Weights alpha",
+                    "Weights beta",
+                    "Model A",
+                    "Model B",
+                    "Model C",
+                    "alpha",
+                    "beta",
+                    "Mode",
+                    "use MBW",
+                    "custum name",
+                    "save setting",
+                    "use ID",
+                ], )
 
         with gr.Tab("Elements", elem_id="tab_deep"):
             with gr.Row():
@@ -528,9 +597,7 @@ def on_ui_tabs():
                 )
                 smd_loadkeys = gr.Button(value="load keys", variant="primary")
             with gr.Row():
-                keys = gr.Dataframe(
-                    headers=["No.", "block", "key"],
-                )
+                keys = gr.Dataframe(headers=["No.", "block", "key"], )
 
         smd_loadkeys.click(fn=loadkeys, inputs=[smd_model_a], outputs=[keys])
 
@@ -616,36 +683,49 @@ def on_ui_tabs():
 
         gengrid.click(
             fn=numanager,
-            inputs=[dtrue, *xysettings, *msettings, *gensets.txt2img_preview_params],
+            inputs=[
+                dtrue, *xysettings, *msettings, *gensets.txt2img_preview_params
+            ],
             outputs=[submit_result, currentmodel, *imagegal],
         )
 
         s_startreserve.click(
             fn=numanager,
-            inputs=[dfalse, *xysettings, *msettings, *gensets.txt2img_preview_params],
+            inputs=[
+                dfalse, *xysettings, *msettings,
+                *gensets.txt2img_preview_params
+            ],
             outputs=[submit_result, currentmodel, *imagegal],
         )
 
-        search.click(
-            fn=searchhistory, inputs=[searchwrods, searchmode], outputs=[history]
-        )
+        search.click(fn=searchhistory,
+                     inputs=[searchwrods, searchmode],
+                     outputs=[history])
 
-        s_reloadreserve.click(fn=nulister, inputs=[dfalse], outputs=[numaframe])
+        s_reloadreserve.click(fn=nulister,
+                              inputs=[dfalse],
+                              outputs=[numaframe])
         s_delreserve.click(fn=nulister, inputs=[s_delnum], outputs=[numaframe])
-        loadcachelist.click(fn=load_cachelist, inputs=[], outputs=[currentcache])
-        addtox.click(
-            fn=lambda x: gr.Textbox.update(value=x), inputs=[inputer], outputs=[xgrid]
-        )
-        addtoy.click(
-            fn=lambda x: gr.Textbox.update(value=x), inputs=[inputer], outputs=[ygrid]
-        )
-        addtoseq.click(fn=add_to_seq, inputs=[xgrid, weights_a], outputs=[xgrid])
+        loadcachelist.click(fn=load_cachelist,
+                            inputs=[],
+                            outputs=[currentcache])
+        addtox.click(fn=lambda x: gr.Textbox.update(value=x),
+                     inputs=[inputer],
+                     outputs=[xgrid])
+        addtoy.click(fn=lambda x: gr.Textbox.update(value=x),
+                     inputs=[inputer],
+                     outputs=[ygrid])
+        addtoseq.click(fn=add_to_seq,
+                       inputs=[xgrid, weights_a],
+                       outputs=[xgrid])
         stopgrid.click(fn=freezetime)
 
-        checkpoints.change(
-            fn=lambda x: ",".join(x), inputs=[checkpoints], outputs=[inputer]
-        )
-        blockids.change(fn=lambda x: " ".join(x), inputs=[blockids], outputs=[inputer])
+        checkpoints.change(fn=lambda x: ",".join(x),
+                           inputs=[checkpoints],
+                           outputs=[inputer])
+        blockids.change(fn=lambda x: " ".join(x),
+                        inputs=[blockids],
+                        outputs=[inputer])
 
         menbers = [
             weights_a,
@@ -817,14 +897,20 @@ def on_ui_tabs():
         x_type.change(
             fn=showxy,
             inputs=[x_type, y_type],
-            outputs=[row_blockids, row_checkpoints, row_inputers, ygrid, row_esets],
+            outputs=[
+                row_blockids, row_checkpoints, row_inputers, ygrid, row_esets
+            ],
         )
         y_type.change(
             fn=showxy,
             inputs=[x_type, y_type],
-            outputs=[row_blockids, row_checkpoints, row_inputers, ygrid, row_esets],
+            outputs=[
+                row_blockids, row_checkpoints, row_inputers, ygrid, row_esets
+            ],
         )
-        x_randseednum.change(fn=makerand, inputs=[x_randseednum], outputs=[xgrid])
+        x_randseednum.change(fn=makerand,
+                             inputs=[x_randseednum],
+                             outputs=[xgrid])
 
         import subprocess
 
@@ -843,7 +929,9 @@ def on_ui_tabs():
                 f.write(text)
 
         s_reloadtext.click(fn=reloadpresets, inputs=[], outputs=[wpresets])
-        s_reloadtags.click(fn=tagdicter, inputs=[wpresets], outputs=[weightstags])
+        s_reloadtags.click(fn=tagdicter,
+                           inputs=[wpresets],
+                           outputs=[weightstags])
         s_savetext.click(fn=savepresets, inputs=[wpresets], outputs=[])
         s_openeditor.click(fn=openeditors, inputs=[], outputs=[])
 
@@ -904,6 +992,7 @@ def searchhistory(words, searchmode):
 
 
 def reversparams(id):
+
     def selectfromhash(hash):
         for model in sd_models.checkpoint_tiles():
             if hash in model:
@@ -921,16 +1010,15 @@ def reversparams(id):
         print("ERROR")
         return [gr.update(value=idsets), *[gr.update() for x in range(14)]]
     if idsets[0] == "ID":
-        return [gr.update(value="ERROR: no history"), *[gr.update() for x in range(14)]]
+        return [
+            gr.update(value="ERROR: no history"),
+            *[gr.update() for x in range(14)]
+        ]
     mgs = idsets[3:]
     if mgs[0] == "":
-        mgs[
-            0
-        ] = "0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
+        mgs[0] = "0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5"
     if mgs[1] == "":
-        mgs[
-            1
-        ] = "0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2"
+        mgs[1] = "0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2"
     mgs[2] = selectfromhash(mgs[2]) if len(mgs[2]) > 5 else ""
     mgs[3] = selectfromhash(mgs[3]) if len(mgs[3]) > 5 else ""
     mgs[4] = selectfromhash(mgs[4]) if len(mgs[4]) > 5 else ""
@@ -941,11 +1029,15 @@ def reversparams(id):
     mgs[11] = [x.strip() for x in mgs[11].split(",")]
     while len(mgs) < 13:
         mgs.append("")
-    return [gr.update(value="setting loaded"), *[gr.update(value=x) for x in mgs[0:13]]]
+    return [
+        gr.update(value="setting loaded"),
+        *[gr.update(value=x) for x in mgs[0:13]]
+    ]
 
 
 def add_to_seq(seq, maker):
-    return gr.Textbox.update(value=maker if seq == "" else seq + "\r\n" + maker)
+    return gr.Textbox.update(value=maker if seq == "" else seq + "\r\n" +
+                             maker)
 
 
 def load_cachelist():

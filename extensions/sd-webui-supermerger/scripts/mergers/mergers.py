@@ -84,9 +84,8 @@ def caster(news, hear):
 def casterr(*args, hear=hear):
     if hear:
         names = {id(v): k for k, v in currentframe().f_back.f_locals.items()}
-        print(
-            "\n".join([names.get(id(arg), "???") + " = " + repr(arg) for arg in args])
-        )
+        print("\n".join(
+            [names.get(id(arg), "???") + " = " + repr(arg) for arg in args]))
 
 
 # msettings=[weights_a,weights_b,model_a,model_b,model_c,device,base_alpha,base_beta,mode,loranames,useblocks,custom_name,save_sets,id_sets,wpresets,deep]
@@ -146,11 +145,8 @@ def smergegen(
 
     save = True if sevemodes[0] in save_sets else False
 
-    result = (
-        savemodel(theta_0, currentmodel, custom_name, save_sets, model_a)
-        if save
-        else "Merged model loaded:" + currentmodel
-    )
+    result = (savemodel(theta_0, currentmodel, custom_name, save_sets, model_a)
+              if save else "Merged model loaded:" + currentmodel)
 
     gc.collect()
 
@@ -277,7 +273,8 @@ def smerge(
         deep = deep.split(",")
 
     # format check
-    if model_a == "" or model_b == "" or ((not modes[0] in mode) and model_c == ""):
+    if model_a == "" or model_b == "" or ((not modes[0] in mode)
+                                          and model_c == ""):
         return "ERROR: Necessary model is not selected", *non3
 
     # for MBW text to list
@@ -287,16 +284,16 @@ def smerge(
         base_alpha = float(weights_a_t[0])
         weights_a = [float(w) for w in weights_a_t[1].split(",")]
         caster(
-            f"from {weights_a_t}, alpha = {base_alpha},weights_a ={weights_a}", hearm
-        )
+            f"from {weights_a_t}, alpha = {base_alpha},weights_a ={weights_a}",
+            hearm)
         if len(weights_a) != 25:
             return f"ERROR: weights alpha value must be {26}.", *non3
         if usebeta:
             base_beta = float(weights_b_t[0])
             weights_b = [float(w) for w in weights_b_t[1].split(",")]
             caster(
-                f"from {weights_b_t}, beta = {base_beta},weights_a ={weights_b}", hearm
-            )
+                f"from {weights_b_t}, beta = {base_beta},weights_a ={weights_b}",
+                hearm)
             if len(weights_b) != 25:
                 return f"ERROR: weights beta value must be {26}.", *non3
 
@@ -340,7 +337,8 @@ def smerge(
         "cond_stage_model.transformer.text_model.embeddings.position_ids"
     ]
     count_target_of_basealpha = 0
-    for key in tqdm(theta_0.keys(), desc="Stage 1/2") if not False else theta_0.keys():
+    for key in tqdm(theta_0.keys(),
+                    desc="Stage 1/2") if not False else theta_0.keys():
         if "model" in key and key in theta_1:
             if usebeta and not key in theta_2:
                 continue
@@ -374,9 +372,8 @@ def smerge(
                             m = re_out.search(key)
                             if m:
                                 out_idx = int(m.groups()[0])
-                                weight_index = (
-                                    NUM_INPUT_BLOCKS + NUM_MID_BLOCK + out_idx
-                                )
+                                weight_index = (NUM_INPUT_BLOCKS +
+                                                NUM_MID_BLOCK + out_idx)
 
                 if weight_index >= NUM_TOTAL_BLOCKS:
                     print(f"ERROR: illegal block index: {key}")
@@ -394,10 +391,13 @@ def smerge(
                 for d in deep:
                     if d.count(":") != 2:
                         continue
-                    dbs, dws, dr = d.split(":")[0], d.split(":")[1], d.split(":")[2]
+                    dbs, dws, dr = d.split(":")[0], d.split(":")[1], d.split(
+                        ":")[2]
                     dbs, dws = dbs.split(" "), dws.split(" ")
-                    dbn, dbs = (True, dbs[1:]) if dbs[0] == "NOT" else (False, dbs)
-                    dwn, dws = (True, dws[1:]) if dws[0] == "NOT" else (False, dws)
+                    dbn, dbs = (True, dbs[1:]) if dbs[0] == "NOT" else (False,
+                                                                        dbs)
+                    dwn, dws = (True, dws[1:]) if dws[0] == "NOT" else (False,
+                                                                        dws)
                     flag = dbn
                     for db in dbs:
                         if db in skey:
@@ -427,10 +427,8 @@ def smerge(
                     hear,
                 )
                 theta_0[key] = (
-                    (1 - current_alpha - current_beta) * theta_0[key]
-                    + current_alpha * theta_1[key]
-                    + current_beta * theta_2[key]
-                )
+                    (1 - current_alpha - current_beta) * theta_0[key] +
+                    current_alpha * theta_1[key] + current_beta * theta_2[key])
             elif modes[3] in mode:  # Twice
                 caster(
                     f"model A[{key}] +  {1-current_alpha} + * model B[{key}]*{alpha}",
@@ -440,12 +438,10 @@ def smerge(
                     f"model A+B[{key}] +  {1-current_beta} + * model C[{key}]*{beta}",
                     hear,
                 )
-                theta_0[key] = (1 - current_alpha) * theta_0[
-                    key
-                ] + current_alpha * theta_1[key]
-                theta_0[key] = (1 - current_beta) * theta_0[
-                    key
-                ] + current_beta * theta_2[key]
+                theta_0[key] = (1 - current_alpha
+                                ) * theta_0[key] + current_alpha * theta_1[key]
+                theta_0[key] = (1 - current_beta
+                                ) * theta_0[key] + current_beta * theta_2[key]
             else:  # Weight
                 if current_alpha == 1:
                     caster(f"alpha = 0,model A[{key}=model B[{key}", hear)
@@ -456,8 +452,7 @@ def smerge(
                         hear,
                     )
                     theta_0[key] = (1 - current_alpha) * theta_0[
-                        key
-                    ] + current_alpha * theta_1[key]
+                        key] + current_alpha * theta_1[key]
 
     currentmodel = makemodelname(
         weights_a,
@@ -518,9 +513,8 @@ def load_model_weights_m(model, model_a, model_b, save):
         return sd_models.read_state_dict(checkpoint_info.filename, "cuda")
 
 
-def makemodelname(
-    weights_a, weights_b, model_a, model_b, model_c, alpha, beta, useblocks, mode
-):
+def makemodelname(weights_a, weights_b, model_a, model_b, model_c, alpha, beta,
+                  useblocks, mode):
     model_a = filenamecutter(model_a)
     model_b = filenamecutter(model_b)
     model_c = filenamecutter(model_c)
@@ -579,13 +573,9 @@ def rwmergelog(mergedname="", settings=[], id=0):
                     setting[i] = f'"{str(setting[i])}"'
             text = ",".join(map(str, setting))
             text = (
-                str(mergeid)
-                + ","
-                + datetime.datetime.now().strftime("%Y.%m.%d %H.%M.%S.%f")[:-7]
-                + ","
-                + text
-                + "\n"
-            )
+                str(mergeid) + "," +
+                datetime.datetime.now().strftime("%Y.%m.%d %H.%M.%S.%f")[:-7] +
+                "," + text + "\n")
             f.writelines(text)
             return mergeid
         try:
@@ -611,9 +601,8 @@ def draw_origin(grid, text, width, height, width_one):
     fnt = get_font(fontsize)
 
     if grid.width != width_one:
-        while (
-            d.multiline_textsize(text, font=fnt)[0] > width_one * 0.75 and fontsize > 0
-        ):
+        while (d.multiline_textsize(text, font=fnt)[0] > width_one * 0.75
+               and fontsize > 0):
             fontsize -= 1
             fnt = get_font(fontsize)
     d.multiline_text((0, 0), text, font=fnt, fill=color_active, align="center")
@@ -698,7 +687,8 @@ def simggen(
 
     if type(p.prompt) == list:
         p.all_prompts = [
-            shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.prompt
+            shared.prompt_styles.apply_styles_to_prompt(x, p.styles)
+            for x in p.prompt
         ]
     else:
         p.all_prompts = [
@@ -713,20 +703,20 @@ def simggen(
     else:
         p.all_negative_prompts = [
             shared.prompt_styles.apply_negative_styles_to_prompt(
-                p.negative_prompt, p.styles
-            )
+                p.negative_prompt, p.styles)
         ]
 
     processed: Processed = processing.process_images(p)
     if "image" in id_sets:
-        processed.images[0] = draw_origin(processed.images[0], str(modelid), w, h, w)
+        processed.images[0] = draw_origin(processed.images[0], str(modelid), w,
+                                          h, w)
     image = processed.images[0]
     if "PNG info" in id_sets:
         mergeinfo = mergeinfo + " ID " + str(modelid)
 
     infotext = create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds)
     if infotext.count("Steps: ") > 1:
-        infotext = infotext[: infotext.rindex("Steps")]
+        infotext = infotext[:infotext.rindex("Steps")]
 
     infotexts = infotext.split(",")
     for i, x in enumerate(infotexts):

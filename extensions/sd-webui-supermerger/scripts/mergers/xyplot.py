@@ -180,7 +180,8 @@ def numanager(
             if row[1] == "waiting":
                 numadepth[i][1] = "Operating"
                 try:
-                    result, currentmodel, xyimage, a, b, c = sgenxyplot(*row[2:])
+                    result, currentmodel, xyimage, a, b, c = sgenxyplot(
+                        *row[2:])
                 except Exception as e:
                     print(e)
                     numadepth[i][1] = "Error"
@@ -232,39 +233,37 @@ def numaker(
     h,
 ):
     global numadepth
-    numadepth.append(
-        [
-            len(numadepth) + 1,
-            "waiting",
-            xtype,
-            xmen,
-            ytype,
-            ymen,
-            esettings,
-            weights_a,
-            weights_b,
-            model_a,
-            model_b,
-            model_c,
-            alpha,
-            beta,
-            mode,
-            useblocks,
-            custom_name,
-            save_sets,
-            id_sets,
-            wpresets,
-            deep,
-            prompt,
-            nprompt,
-            steps,
-            sampler,
-            cfg,
-            seed,
-            w,
-            h,
-        ]
-    )
+    numadepth.append([
+        len(numadepth) + 1,
+        "waiting",
+        xtype,
+        xmen,
+        ytype,
+        ymen,
+        esettings,
+        weights_a,
+        weights_b,
+        model_a,
+        model_b,
+        model_c,
+        alpha,
+        beta,
+        mode,
+        useblocks,
+        custom_name,
+        save_sets,
+        id_sets,
+        wpresets,
+        deep,
+        prompt,
+        nprompt,
+        steps,
+        sampler,
+        cfg,
+        seed,
+        w,
+        h,
+    ])
     return numalistmaker(copy.deepcopy(numadepth))
 
 
@@ -346,14 +345,15 @@ def sgenxyplot(
         if hear:
             print(
                 f"xmen:{xmen}, ymen:{ymen}, xtype:{xtype}, ytype:{ytype}, weights_a:{weights_a_in}, weights_b:{weights_b_in}, model_A:{model_a},model_B :{model_b}, model_C:{model_c}, alpha:{alpha},\
-        beta :{beta}, mode:{mode}, blocks:{useblocks}"
-            )
+        beta :{beta}, mode:{mode}, blocks:{useblocks}")
 
     pinpoint = "pinpoint blocks" in xtype or "pinpoint blocks" in ytype
     usebeta = modes[2] in mode or modes[3] in mode
 
     # check and adjust format
-    print(f"XY plot start, mode:{mode}, X: {xtype}, Y: {ytype}, MBW: {useblocks}")
+    print(
+        f"XY plot start, mode:{mode}, X: {xtype}, Y: {ytype}, MBW: {useblocks}"
+    )
     castall(hear)
     None5 = [None, None, None, None, None]
     if xmen == "":
@@ -364,7 +364,8 @@ def sgenxyplot(
         return f"ERROR: model_A is not selected", *None5
     if model_b == [] and not ("model_B" in xtype or "model_B" in ytype):
         return f"ERROR: model_B is not selected", *None5
-    if model_c == [] and usebeta and not ("model_C" in xtype or "model_C" in ytype):
+    if model_c == [] and usebeta and not ("model_C" in xtype
+                                          or "model_C" in ytype):
         return "ERROR: model_C is not selected", *None5
     if xtype == ytype:
         return "ERROR: same type selected for X,Y", *None5
@@ -390,7 +391,7 @@ def sgenxyplot(
             zs = zmen.splitlines()
             caster(zs, hear)
             if "mbw alpha and beta" in ztype:
-                zs = [zs[i : i + 2] for i in range(0, len(zs), 2)]
+                zs = [zs[i:i + 2] for i in range(0, len(zs), 2)]
                 caster(zs, hear)
         elif "elemental" in ztype:
             zs = zmen.split("\n\n")
@@ -463,6 +464,7 @@ def sgenxyplot(
         "OUT10",
         "OUT11",
     ]
+
     # format ,IN00 IN03,IN04-IN09,OUT4,OUT05
 
     def weightsdealer(x, xtype, y, weights):
@@ -483,13 +485,13 @@ def sgenxyplot(
             if "-" in z:
                 zt = [zt.strip() for zt in z.split("-")]
                 if blockid.index(zt[1]) > blockid.index(zt[0]):
-                    flagger[blockid.index(zt[0]) : blockid.index(zt[1]) + 1] = [
-                        changer
-                    ] * (blockid.index(zt[1]) - blockid.index(zt[0]) + 1)
+                    flagger[blockid.index(zt[0]):blockid.index(zt[1]) +
+                            1] = [changer] * (blockid.index(zt[1]) -
+                                              blockid.index(zt[0]) + 1)
                 else:
-                    flagger[blockid.index(zt[1]) : blockid.index(zt[0]) + 1] = [
-                        changer
-                    ] * (blockid.index(zt[0]) - blockid.index(zt[1]) + 1)
+                    flagger[blockid.index(zt[1]):blockid.index(zt[0]) +
+                            1] = [changer] * (blockid.index(zt[0]) -
+                                              blockid.index(zt[1]) + 1)
             else:
                 flagger[blockid.index(z)] = changer
         for i, f in enumerate(flagger):
@@ -628,7 +630,8 @@ def sgenxyplot(
         ys = [" "]
 
     if "effective" in xtype or "effective" in ytype:
-        xyimage, xs, ys = effectivechecker(xyimage, xs, ys, model_a, model_b, esettings)
+        xyimage, xs, ys = effectivechecker(xyimage, xs, ys, model_a, model_b,
+                                           esettings)
 
     if not "grid" in esettings:
         gridmodel = makegridmodelname(
@@ -662,9 +665,8 @@ def smakegrid(imgs, xs, ys, currentmodel, p):
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i % len(xs) * w, i // len(xs) * h))
 
-    grid = images.draw_grid_annotations(
-        grid, int(p.width), int(p.height), hor_texts, ver_texts
-    )
+    grid = images.draw_grid_annotations(grid, int(p.width), int(p.height),
+                                        hor_texts, ver_texts)
     grid = draw_origin(grid, currentmodel, w * len(xs), h * len(ys), w)
     if opts.grid_save:
         images.save_image(
@@ -790,7 +792,8 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
 
     model_a = filenamecutter(model_a)
     model_b = filenamecutter(model_b)
-    dir = os.path.join(opts.outdir_txt2img_samples, f"{model_a+model_b}", "difgif")
+    dir = os.path.join(opts.outdir_txt2img_samples, f"{model_a+model_b}",
+                       "difgif")
 
     if "gif" in esettings:
         try:
@@ -798,7 +801,8 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
         except FileExistsError:
             pass
 
-    ls, ss = (xs.copy(), ys.copy()) if len(xs) > len(ys) else (ys.copy(), xs.copy())
+    ls, ss = (xs.copy(), ys.copy()) if len(xs) > len(ys) else (ys.copy(),
+                                                               xs.copy())
 
     for i in range(len(imgs) - 1):
         im2 = np.array(imgs[i + 1])
@@ -817,8 +821,7 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
 
         if "gif" in esettings:
             gifpath = gifpath_t = os.path.join(
-                dir, ls[i + 1].replace(":", "_") + ".gif"
-            )
+                dir, ls[i + 1].replace(":", "_") + ".gif")
 
             is_file = os.path.isfile(gifpath)
             j = 0

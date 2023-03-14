@@ -28,9 +28,10 @@ parser.add_argument(
     default="cpu",
     required=False,
 )
-parser.add_argument(
-    "--without_vae", action="store_true", help="Do not merge VAE", required=False
-)
+parser.add_argument("--without_vae",
+                    action="store_true",
+                    help="Do not merge VAE",
+                    required=False)
 
 args = parser.parse_args()
 
@@ -55,7 +56,6 @@ if os.path.isfile(output_file):
             exit()
         else:
             print("Please enter y or n")
-
 
 for key in tqdm(theta_0.keys(), desc="Stage 1/2"):
     # skip VAE model parameters to get better results(tested for anime models)

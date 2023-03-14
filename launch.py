@@ -31,8 +31,7 @@ def check_python_version():
     if not (major == 3 and minor in supported_minors):
         import modules.errors
 
-        modules.errors.print_error_explanation(
-            f"""
+        modules.errors.print_error_explanation(f"""
 INCOMPATIBLE PYTHON VERSION
 
 This program is tested with 3.10.6 Python, but you have {major}.{minor}.{micro}.
@@ -46,8 +45,7 @@ You can download 3.10 Python from here: https://www.python.org/downloads/release
 {"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
 
 Use --skip-python-version-check to suppress this warning.
-"""
-        )
+""")
 
 
 def commit_hash():
@@ -87,14 +85,13 @@ def run(command, desc=None, errdesc=None, custom_env=None, live=False):
 
     if live:
         result = subprocess.run(
-            command, shell=True, env=os.environ if custom_env is None else custom_env
-        )
+            command,
+            shell=True,
+            env=os.environ if custom_env is None else custom_env)
         if result.returncode != 0:
-            raise RuntimeError(
-                f"""{errdesc or 'Error running command'}.
+            raise RuntimeError(f"""{errdesc or 'Error running command'}.
 Command: {command}
-Error code: {result.returncode}"""
-            )
+Error code: {result.returncode}""")
 
         return ""
 
@@ -119,9 +116,10 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
 
 
 def check_run(command):
-    result = subprocess.run(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
+    result = subprocess.run(command,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True)
     return result.returncode == 0
 
 
@@ -231,10 +229,10 @@ def run_extension_installer(extension_dir):
         print(
             run(
                 f'"{python}" "{path_installer}"',
-                errdesc=f"Error running install.py for extension {extension_dir}",
+                errdesc=
+                f"Error running install.py for extension {extension_dir}",
                 custom_env=env,
-            )
-        )
+            ))
     except Exception as e:
         print(e, file=sys.stderr)
 
@@ -251,7 +249,9 @@ def list_extensions(settings_file):
 
     disabled_extensions = set(settings.get("disabled_extensions", []))
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    return [
+        x for x in os.listdir(dir_extensions) if x not in disabled_extensions
+    ]
 
 
 def run_extensions_installers(settings_file):
@@ -259,7 +259,8 @@ def run_extensions_installers(settings_file):
         return
 
     for dirname_extension in list_extensions(settings_file):
-        run_extension_installer(os.path.join(dir_extensions, dirname_extension))
+        run_extension_installer(os.path.join(dir_extensions,
+                                             dirname_extension))
 
 
 def prepare_environment():
@@ -269,13 +270,15 @@ def prepare_environment():
         "TORCH_COMMAND",
         "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117",
     )
-    requirements_file = os.environ.get("REQS_FILE", "requirements_versions.txt")
+    requirements_file = os.environ.get("REQS_FILE",
+                                       "requirements_versions.txt")
     commandline_args = os.environ.get(
         "COMMANDLINE_ARGS",
         "--skip-python-version-check --skip-torch-cuda-test --enable-insecure-extension-access",
     )
 
-    xformers_package = os.environ.get("XFORMERS_PACKAGE", "xformers==0.0.16rc425")
+    xformers_package = os.environ.get("XFORMERS_PACKAGE",
+                                      "xformers==0.0.16rc425")
     gfpgan_package = os.environ.get(
         "GFPGAN_PACKAGE",
         "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379",
@@ -290,34 +293,30 @@ def prepare_environment():
     )
 
     stable_diffusion_repo = os.environ.get(
-        "STABLE_DIFFUSION_REPO", "https://github.com/Stability-AI/stablediffusion.git"
-    )
+        "STABLE_DIFFUSION_REPO",
+        "https://github.com/Stability-AI/stablediffusion.git")
     taming_transformers_repo = os.environ.get(
-        "TAMING_TRANSFORMERS_REPO", "https://github.com/CompVis/taming-transformers.git"
-    )
+        "TAMING_TRANSFORMERS_REPO",
+        "https://github.com/CompVis/taming-transformers.git")
     k_diffusion_repo = os.environ.get(
-        "K_DIFFUSION_REPO", "https://github.com/crowsonkb/k-diffusion.git"
-    )
+        "K_DIFFUSION_REPO", "https://github.com/crowsonkb/k-diffusion.git")
     codeformer_repo = os.environ.get(
-        "CODEFORMER_REPO", "https://github.com/sczhou/CodeFormer.git"
-    )
-    blip_repo = os.environ.get("BLIP_REPO", "https://github.com/salesforce/BLIP.git")
+        "CODEFORMER_REPO", "https://github.com/sczhou/CodeFormer.git")
+    blip_repo = os.environ.get("BLIP_REPO",
+                               "https://github.com/salesforce/BLIP.git")
 
     stable_diffusion_commit_hash = os.environ.get(
-        "STABLE_DIFFUSION_COMMIT_HASH", "47b6b607fdd31875c9279cd2f4f16b92e4ea958e"
-    )
+        "STABLE_DIFFUSION_COMMIT_HASH",
+        "47b6b607fdd31875c9279cd2f4f16b92e4ea958e")
     taming_transformers_commit_hash = os.environ.get(
-        "TAMING_TRANSFORMERS_COMMIT_HASH", "24268930bf1dce879235a7fddd0b2355b84d7ea6"
-    )
+        "TAMING_TRANSFORMERS_COMMIT_HASH",
+        "24268930bf1dce879235a7fddd0b2355b84d7ea6")
     k_diffusion_commit_hash = os.environ.get(
-        "K_DIFFUSION_COMMIT_HASH", "5b3af030dd83e0297272d861c19477735d0317ec"
-    )
+        "K_DIFFUSION_COMMIT_HASH", "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get(
-        "CODEFORMER_COMMIT_HASH", "c5b4593074ba6214284d6acd5f1719b6c5d739af"
-    )
+        "CODEFORMER_COMMIT_HASH", "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get(
-        "BLIP_COMMIT_HASH", "48211a1594f1321b00f14c9f7a5b4813144b2fb9"
-    )
+        "BLIP_COMMIT_HASH", "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     sys.argv += shlex.split(commandline_args)
 
@@ -331,11 +330,12 @@ def prepare_environment():
     args, _ = parser.parse_known_args(sys.argv)
 
     sys.argv, _ = extract_arg(sys.argv, "-f")
-    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, "--skip-torch-cuda-test")
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv,
+                                                 "--skip-torch-cuda-test")
     sys.argv, skip_python_version_check = extract_arg(
-        sys.argv, "--skip-python-version-check"
-    )
-    sys.argv, reinstall_xformers = extract_arg(sys.argv, "--reinstall-xformers")
+        sys.argv, "--skip-python-version-check")
+    sys.argv, reinstall_xformers = extract_arg(sys.argv,
+                                               "--reinstall-xformers")
     sys.argv, reinstall_torch = extract_arg(sys.argv, "--reinstall-torch")
     sys.argv, update_check = extract_arg(sys.argv, "--update-check")
     sys.argv, run_tests, test_dir = extract_opt(sys.argv, "--tests")
@@ -351,7 +351,8 @@ def prepare_environment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
 
-    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
+    if reinstall_torch or not is_installed("torch") or not is_installed(
+            "torchvision"):
         run(
             f'"{python}" -m {torch_command}',
             "Installing torch and torchvision",
@@ -376,7 +377,8 @@ def prepare_environment():
     if (not is_installed("xformers") or reinstall_xformers) and xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
-                run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
+                run_pip(f"install -U -I --no-deps {xformers_package}",
+                        "xformers")
             else:
                 print(
                     "Installation of xformers is not supported in this version of Python."
@@ -412,9 +414,8 @@ def prepare_environment():
         "K-diffusion",
         k_diffusion_commit_hash,
     )
-    git_clone(
-        codeformer_repo, repo_dir("CodeFormer"), "CodeFormer", codeformer_commit_hash
-    )
+    git_clone(codeformer_repo, repo_dir("CodeFormer"), "CodeFormer",
+              codeformer_commit_hash)
     git_clone(blip_repo, repo_dir("BLIP"), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
@@ -455,12 +456,13 @@ def tests(test_dir):
     )
 
     os.environ["COMMANDLINE_ARGS"] = ""
-    with open("test/stdout.txt", "w", encoding="utf8") as stdout, open(
-        "test/stderr.txt", "w", encoding="utf8"
-    ) as stderr:
-        proc = subprocess.Popen(
-            [sys.executable, *sys.argv], stdout=stdout, stderr=stderr
-        )
+    with open("test/stdout.txt", "w",
+              encoding="utf8") as stdout, open("test/stderr.txt",
+                                               "w",
+                                               encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *sys.argv],
+                                stdout=stdout,
+                                stderr=stderr)
 
     import test.server_poll
 
