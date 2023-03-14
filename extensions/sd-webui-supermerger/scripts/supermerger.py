@@ -1,32 +1,27 @@
+import argparse
+import csv
+import gc
+import os
+import os.path
+import re
+import shutil
 from heapq import merge
 from logging import exception
 from pprint import pprint
+
 import gradio as gr
-import gc
-import re
 import safetensors.torch
-import os
-import shutil
-import os.path
-import argparse
+
 import modules.ui
 import scripts.mergers.pluslora as pluslora
-from scripts.mergers.mergers import simggen, typesg, smergegen, rwmergelog
-from scripts.mergers.xyplot import freezetime, numaker, numanager, nulister
-from scripts.mergers.model_util import savemodel
-import csv
-from modules import (
-    sd_models,
-    script_callbacks,
-    scripts,
-    shared,
-    sd_hijack,
-    devices,
-    sd_vae,
-)
-from modules.ui import create_refresh_button, create_output_panel
-from modules.shared import opts
+from modules import (devices, script_callbacks, scripts, sd_hijack, sd_models,
+                     sd_vae, shared)
 from modules.sd_models import checkpoints_loaded
+from modules.shared import opts
+from modules.ui import create_output_panel, create_refresh_button
+from scripts.mergers.mergers import rwmergelog, simggen, smergegen, typesg
+from scripts.mergers.model_util import savemodel
+from scripts.mergers.xyplot import freezetime, nulister, numaker, numanager
 
 gensets = argparse.Namespace()
 

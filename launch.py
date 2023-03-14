@@ -1,12 +1,12 @@
 # this scripts installs necessary requirements and launches main program in webui.py
-import subprocess
-import os
-import sys
-import importlib.util
-import shlex
-import platform
 import argparse
+import importlib.util
 import json
+import os
+import platform
+import shlex
+import subprocess
+import sys
 
 dir_repos = "repositories"
 dir_extensions = "extensions"

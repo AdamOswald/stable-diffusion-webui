@@ -1,20 +1,16 @@
-import random
-import cv2
-import numpy as np
-import os
 import copy
 import csv
+import os
+import random
+
+import cv2
+import numpy as np
 from PIL import Image
+
 from modules import images, scripts
 from modules.shared import opts
-from scripts.mergers.mergers import (
-    types,
-    smerge,
-    simggen,
-    filenamecutter,
-    draw_origin,
-    wpreseter,
-)
+from scripts.mergers.mergers import (draw_origin, filenamecutter, simggen,
+                                     smerge, types, wpreseter)
 from scripts.mergers.model_util import usemodelgen
 
 hear = True

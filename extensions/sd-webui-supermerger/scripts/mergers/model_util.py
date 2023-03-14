@@ -1,9 +1,11 @@
-from modules import devices
 import os
-import torch
-from transformers import CLIPTextModel, CLIPTextConfig
-from safetensors.torch import load_file
+
 import safetensors.torch
+import torch
+from safetensors.torch import load_file
+from transformers import CLIPTextConfig, CLIPTextModel
+
+from modules import devices
 from modules.sd_models import read_state_dict
 
 # DiffUsers版StableDiffusionのモデルパラメータ
@@ -989,7 +991,7 @@ def load_models_from_stable_diffusion_checkpoint(v2, ckpt_path, dtype=None):
 
 
 def usemodelgen(theta_0, model_a):
-    from modules import lowvram, devices, sd_hijack, shared, sd_vae
+    from modules import devices, lowvram, sd_hijack, sd_vae, shared
 
     sd_hijack.model_hijack.undo_hijack(shared.sd_model)
 

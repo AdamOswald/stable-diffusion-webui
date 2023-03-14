@@ -1,22 +1,20 @@
-import re
-import torch
+import gc
 import math
 import os
-import gc
-import gradio as gr
-from torchmetrics import Precision
-import modules.shared as shared
-import gc
-from safetensors.torch import load_file, save_file
+import re
 from typing import List
+
+import gradio as gr
+import torch
+from safetensors.torch import load_file, save_file
+from torchmetrics import Precision
 from tqdm import tqdm
-from modules import sd_models, scripts
-from scripts.mergers.model_util import (
-    load_models_from_stable_diffusion_checkpoint,
-    filenamecutter,
-    savemodel,
-)
+
+import modules.shared as shared
+from modules import scripts, sd_models
 from modules.ui import create_refresh_button
+from scripts.mergers.model_util import (
+    filenamecutter, load_models_from_stable_diffusion_checkpoint, savemodel)
 
 LORABLOCKS = [
     "encoder",
