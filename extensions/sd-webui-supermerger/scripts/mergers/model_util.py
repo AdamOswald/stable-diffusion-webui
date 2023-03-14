@@ -3,7 +3,8 @@ import os
 import safetensors.torch
 import torch
 from safetensors.torch import load_file
-from transformers import CLIPTextConfig, CLIPTextModel
+from transformers import CLIPTextConfig
+from transformers import CLIPTextModel
 
 from modules import devices
 from modules.sd_models import read_state_dict

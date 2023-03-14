@@ -1,7 +1,6 @@
 import csv
 import datetime
 import gc
-import os
 import os.path
 import re
 from inspect import currentframe
@@ -10,15 +9,26 @@ from linecache import clearcache
 import torch
 import tqdm
 from fonts.ttf import Roboto
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
 from tqdm import tqdm
 
-from modules import images, processing, scripts, sd_models, sd_samplers, shared
-from modules.processing import Processed, create_infotext
-from modules.sd_models import checkpoints_loaded, load_model
+from modules import images
+from modules import processing
+from modules import scripts
+from modules import sd_models
+from modules import sd_samplers
+from modules import shared
+from modules.processing import create_infotext
+from modules.processing import Processed
+from modules.sd_models import checkpoints_loaded
+from modules.sd_models import load_model
 from modules.shared import opts
 from modules.ui import plaintext_to_html
-from scripts.mergers.model_util import filenamecutter, savemodel, usemodelgen
+from scripts.mergers.model_util import filenamecutter
+from scripts.mergers.model_util import savemodel
+from scripts.mergers.model_util import usemodelgen
 
 mergedmodel = []
 typesg = [

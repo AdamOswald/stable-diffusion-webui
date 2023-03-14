@@ -1,15 +1,19 @@
 # v1: split from train_db_fixed.py.
 # v2: support safetensors
-
 import math
 import os
 
 import diffusers
 import torch
-from diffusers import (AutoencoderKL, DDIMScheduler, StableDiffusionPipeline,
-                       UNet2DConditionModel)
-from safetensors.torch import load_file, save_file
-from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
+from diffusers import AutoencoderKL
+from diffusers import DDIMScheduler
+from diffusers import StableDiffusionPipeline
+from diffusers import UNet2DConditionModel
+from safetensors.torch import load_file
+from safetensors.torch import save_file
+from transformers import CLIPTextConfig
+from transformers import CLIPTextModel
+from transformers import CLIPTokenizer
 
 from modules.sd_models import read_state_dict
 

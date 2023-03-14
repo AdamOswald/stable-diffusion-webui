@@ -7,10 +7,15 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from modules import images, scripts
+from modules import images
+from modules import scripts
 from modules.shared import opts
-from scripts.mergers.mergers import (draw_origin, filenamecutter, simggen,
-                                     smerge, types, wpreseter)
+from scripts.mergers.mergers import draw_origin
+from scripts.mergers.mergers import filenamecutter
+from scripts.mergers.mergers import simggen
+from scripts.mergers.mergers import smerge
+from scripts.mergers.mergers import types
+from scripts.mergers.mergers import wpreseter
 from scripts.mergers.model_util import usemodelgen
 
 hear = True

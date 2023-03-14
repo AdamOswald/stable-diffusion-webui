@@ -6,15 +6,18 @@ from typing import List
 
 import gradio as gr
 import torch
-from safetensors.torch import load_file, save_file
+from safetensors.torch import load_file
+from safetensors.torch import save_file
 from torchmetrics import Precision
 from tqdm import tqdm
 
 import modules.shared as shared
-from modules import scripts, sd_models
+from modules import scripts
+from modules import sd_models
 from modules.ui import create_refresh_button
-from scripts.mergers.model_util import (
-    filenamecutter, load_models_from_stable_diffusion_checkpoint, savemodel)
+from scripts.mergers.model_util import filenamecutter
+from scripts.mergers.model_util import load_models_from_stable_diffusion_checkpoint
+from scripts.mergers.model_util import savemodel
 
 LORABLOCKS = [
     "encoder",

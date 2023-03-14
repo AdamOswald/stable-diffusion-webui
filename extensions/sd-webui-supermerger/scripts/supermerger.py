@@ -1,7 +1,6 @@
 import argparse
 import csv
 import gc
-import os
 import os.path
 import re
 import shutil
@@ -14,14 +13,26 @@ import safetensors.torch
 
 import modules.ui
 import scripts.mergers.pluslora as pluslora
-from modules import (devices, script_callbacks, scripts, sd_hijack, sd_models,
-                     sd_vae, shared)
+from modules import devices
+from modules import script_callbacks
+from modules import scripts
+from modules import sd_hijack
+from modules import sd_models
+from modules import sd_vae
+from modules import shared
 from modules.sd_models import checkpoints_loaded
 from modules.shared import opts
-from modules.ui import create_output_panel, create_refresh_button
-from scripts.mergers.mergers import rwmergelog, simggen, smergegen, typesg
+from modules.ui import create_output_panel
+from modules.ui import create_refresh_button
+from scripts.mergers.mergers import rwmergelog
+from scripts.mergers.mergers import simggen
+from scripts.mergers.mergers import smergegen
+from scripts.mergers.mergers import typesg
 from scripts.mergers.model_util import savemodel
-from scripts.mergers.xyplot import freezetime, nulister, numaker, numanager
+from scripts.mergers.xyplot import freezetime
+from scripts.mergers.xyplot import nulister
+from scripts.mergers.xyplot import numaker
+from scripts.mergers.xyplot import numanager
 
 gensets = argparse.Namespace()
 
