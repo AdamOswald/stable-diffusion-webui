@@ -12,7 +12,7 @@ All updates can be found [here](https://github.com/hako-mikan/sd-webui-supermerg
 ### bug fix 2023.03.06.0145
 
 - fixed : Add difference function was broken
-- Add differenceが正常に動作しない問題を解決しました
+- Add difference が正常に動作しない問題を解決しました
 
 ### update 2023.03.03.0145(JST)
 
@@ -108,6 +108,7 @@ Changes only specific blocks in MBW. Choose alpha or beta for the opposite axis.
 
 IN01,OUT10 OUT11, OUT03-OUT06,OUT07-OUT11,NOT M00 OUT03-OUT06
 In this case
+
 - 1:Only IN01 changes
 - 2:OUT10 and OUT11 change
 - 3:OUT03 to OUT06 change
@@ -164,8 +165,8 @@ The calculate dimention button calculates the dimensions of each LoRA and activa
 
 ### Difference between Normal Merge and SAME TO STRENGTH
 
-If the same to Strength option is not used, the result is the same as the merge in the script created by kohya-ss. In this case, the result is different from the case where LoRA is applied on Web-ui as shown in the figure below. The reason for this is related to the mathematical formula used to adopt LoRA into U-net. kohya-ss's script multiplies the ratio as it is, but the formula used to apply LoRA squares the ratio, so if the ratio is set to a number other than 1, or to a negative value, the result will differ from Strength (strength when applied).  Using the SAME TO STRENGTH option, the square root of the ratio is driven at merge time, so that Strength and the ratio are calculated to have the same meaning at apply time. It is also calculated so that a negative value will have the same effect. If you are not doing additional learning, for example, you may be fine using the SAME TO STRENGTH option, but if you are doing additional learning on the merged LoRA, you may not want to use anyone else's option.  
-The following figures show the generated images for each case of normal image generation/same to Strength option/normal merge, using  merged LoRAs of figmization and ukiyoE. You can see that in the case of normal merge, even in the negative direction, the image is squared and positive.
+If the same to Strength option is not used, the result is the same as the merge in the script created by kohya-ss. In this case, the result is different from the case where LoRA is applied on Web-ui as shown in the figure below. The reason for this is related to the mathematical formula used to adopt LoRA into U-net. kohya-ss's script multiplies the ratio as it is, but the formula used to apply LoRA squares the ratio, so if the ratio is set to a number other than 1, or to a negative value, the result will differ from Strength (strength when applied). Using the SAME TO STRENGTH option, the square root of the ratio is driven at merge time, so that Strength and the ratio are calculated to have the same meaning at apply time. It is also calculated so that a negative value will have the same effect. If you are not doing additional learning, for example, you may be fine using the SAME TO STRENGTH option, but if you are doing additional learning on the merged LoRA, you may not want to use anyone else's option.  
+The following figures show the generated images for each case of normal image generation/same to Strength option/normal merge, using merged LoRAs of figmization and ukiyoE. You can see that in the case of normal merge, even in the negative direction, the image is squared and positive.
 ![xyz_grid-0014-1534704891](https://user-images.githubusercontent.com/122196982/218322034-b7171298-5159-4619-be1d-ac684da92ed9.jpg)
 
 For hierarchical merges see

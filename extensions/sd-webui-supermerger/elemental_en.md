@@ -1,6 +1,6 @@
 # Elemental Merge
 
-- This is a block-by-block merge that goes beyond block-by-block  merge.
+- This is a block-by-block merge that goes beyond block-by-block merge.
 
 In a block-by-block merge, the merge ratio can be changed for each of the 25 blocks, but a blocks also consists of multiple elements, and in principle it is possible to change the ratio for each element. It is possible, but the number of elements is more than 600, and it was doubtful whether it could be handled by human hands, but we tried to implement it. I do not recommend merging elements by element out of the blue. It is recommended to use it as a final adjustment when a problem that cannot be solved by block-by-block merging.  
 The following images show the result of changing the elements in the OUT05 layer. The leftmost one is without merging, the second one is all the OUT05 layers (i.e., normal block-by-block merging), and the rest are element merging. As shown in the table below, there are several more elements in attn2, etc.
@@ -75,55 +75,55 @@ The following image shows the result of running sample5 of sample.txt.
 Basically, it seems that attn is responsible for the face and clothing information. The IN07, OUT03, OUT04, and OUT05 layers seem to have a particularly strong influence. It does not seem to make sense to change the same element in multiple Blocks at the same time, since the degree of influence often differs depending on the Blocks.
 No element exists where it is marked null.
 
-||IN00|IN01|IN02|IN03|IN04|IN05|IN06|IN07|IN08|IN09|IN10|IN11|M00|M00|OUT00|OUT01|OUT02|OUT03|OUT04|OUT05|OUT06|OUT07|OUT08|OUT09|OUT10|OUT11
-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
-op.bias|null|null|null||null|null||null|null||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
-op.weight|null|null|null||null|null||null|null||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
-emb_layers.1.bias|null|||null|||null|||null|null|||||||||||||||
-emb_layers.1.weight|null|||null|||null|||null|null|||||||||||||||
-in_layers.0.bias|null|||null|||null|||null|null|||||||||||||||
-in_layers.0.weight|null|||null|||null|||null|null|||||||||||||||
-in_layers.2.bias|null|||null|||null|||null|null|||||||||||||||
-in_layers.2.weight|null|||null|||null|||null|null|||||||||||||||
-out_layers.0.bias|null|||null|||null|||null|null|||||||||||||||
-out_layers.0.weight|null|||null|||null|||null|null|||||||||||||||
-out_layers.3.bias|null|||null|||null|||null|null|||||||||||||||
-out_layers.3.weight|null|||null|||null|||null|null|||||||||||||||
-skip_connection.bias|null|||null||null|null|||null|null|null|null|null||||||||||||
-skip_connection.weight|null|||null||null|null|||null|null|null|null|null||||||||||||
-norm.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-norm.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-proj_in.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-proj_in.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-proj_out.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-proj_out.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn1.to_k.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn1.to_out.0.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn1.to_out.0.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn1.to_q.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn1.to_v.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn2.to_k.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn2.to_out.0.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn2.to_out.0.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn2.to_q.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.attn2.to_v.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.ff.net.0.proj.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.ff.net.0.proj.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.ff.net.2.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.ff.net.2.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm1.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm1.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm2.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm2.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm3.bias|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-transformer_blocks.0.norm3.weight|null|||null|||null|||null|null|null||null|null|null|null|||||||||
-conv.bias|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null||null|null||null|null||null|null|null
-conv.weight|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null||null|null||null|null||null|null|null
-0.bias||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-0.weight||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-2.bias|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-2.weight|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-time_embed.0.weight||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-time_embed.0.bias||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-time_embed.2.weight||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
-time_embed.2.bias||null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|
+|                                            | IN00 | IN01 | IN02 | IN03 | IN04 | IN05 | IN06 | IN07 | IN08 | IN09 | IN10 | IN11 | M00  | M00  | OUT00 | OUT01 | OUT02 | OUT03 | OUT04 | OUT05 | OUT06 | OUT07 | OUT08 | OUT09 | OUT10 | OUT11 |
+| ------------------------------------------ | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| op.bias                                    | null | null | null |      | null | null |      | null | null |      | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| op.weight                                  | null | null | null |      | null | null |      | null | null |      | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| emb_layers.1.bias                          | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| emb_layers.1.weight                        | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| in_layers.0.bias                           | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| in_layers.0.weight                         | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| in_layers.2.bias                           | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| in_layers.2.weight                         | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| out_layers.0.bias                          | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| out_layers.0.weight                        | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| out_layers.3.bias                          | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| out_layers.3.weight                        | null |      |      | null |      |      | null |      |      | null | null |      |      |      |       |       |       |       |       |       |       |       |       |       |       |
+| skip_connection.bias                       | null |      |      | null |      | null | null |      |      | null | null | null | null | null |       |       |       |       |       |       |       |       |       |       |       |
+| skip_connection.weight                     | null |      |      | null |      | null | null |      |      | null | null | null | null | null |       |       |       |       |       |       |       |       |       |       |       |
+| norm.bias                                  | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| norm.weight                                | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| proj_in.bias                               | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| proj_in.weight                             | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| proj_out.bias                              | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| proj_out.weight                            | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn1.to_k.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn1.to_out.0.bias   | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn1.to_out.0.weight | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn1.to_q.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn1.to_v.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn2.to_k.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn2.to_out.0.bias   | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn2.to_out.0.weight | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn2.to_q.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.attn2.to_v.weight     | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.ff.net.0.proj.bias    | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.ff.net.0.proj.weight  | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.ff.net.2.bias         | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.ff.net.2.weight       | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm1.bias            | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm1.weight          | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm2.bias            | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm2.weight          | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm3.bias            | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| transformer_blocks.0.norm3.weight          | null |      |      | null |      |      | null |      |      | null | null | null |      | null | null  | null  | null  |       |       |       |       |       |       |       |       |
+| conv.bias                                  | null | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  |       | null  | null  |       | null  | null  |       | null  | null  | null  |
+| conv.weight                                | null | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  |       | null  | null  |       | null  | null  |       | null  | null  | null  |
+| 0.bias                                     |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| 0.weight                                   |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| 2.bias                                     | null | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| 2.weight                                   | null | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| time_embed.0.weight                        |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| time_embed.0.bias                          |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| time_embed.2.weight                        |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
+| time_embed.2.bias                          |      | null | null | null | null | null | null | null | null | null | null | null | null | null | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  | null  |
