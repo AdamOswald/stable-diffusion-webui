@@ -6,14 +6,30 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser(description="Merge two models")
 parser.add_argument("model_0", type=str, help="Path to model 0")
 parser.add_argument("model_1", type=str, help="Path to model 1")
-parser.add_argument("--alpha", type=float,
-                    help="Alpha value, optional, defaults to 0.5", default=0.5, required=False)
-parser.add_argument("--output", type=str,
-                    help="Output file name, without extension", default="merged", required=False)
-parser.add_argument("--device", type=str,
-                    help="Device to use, defaults to cpu", default="cpu", required=False)
-parser.add_argument("--without_vae", action="store_true",
-                    help="Do not merge VAE", required=False)
+parser.add_argument(
+    "--alpha",
+    type=float,
+    help="Alpha value, optional, defaults to 0.5",
+    default=0.5,
+    required=False,
+)
+parser.add_argument(
+    "--output",
+    type=str,
+    help="Output file name, without extension",
+    default="merged",
+    required=False,
+)
+parser.add_argument(
+    "--device",
+    type=str,
+    help="Device to use, defaults to cpu",
+    default="cpu",
+    required=False,
+)
+parser.add_argument(
+    "--without_vae", action="store_true", help="Do not merge VAE", required=False
+)
 
 args = parser.parse_args()
 

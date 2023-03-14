@@ -7,7 +7,14 @@ import csv
 from PIL import Image
 from modules import images, scripts
 from modules.shared import opts
-from scripts.mergers.mergers import types, smerge, simggen, filenamecutter, draw_origin, wpreseter
+from scripts.mergers.mergers import (
+    types,
+    smerge,
+    simggen,
+    filenamecutter,
+    draw_origin,
+    wpreseter,
+)
 from scripts.mergers.model_util import usemodelgen
 
 hear = True
@@ -23,9 +30,36 @@ def freezetime():
     state_mergen = True
 
 
-def numanager(normalstart, xtype, xmen, ytype, ymen, esettings,
-              weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-              prompt, nprompt, steps, sampler, cfg, seed, w, h):
+def numanager(
+    normalstart,
+    xtype,
+    xmen,
+    ytype,
+    ymen,
+    esettings,
+    weights_a,
+    weights_b,
+    model_a,
+    model_b,
+    model_c,
+    alpha,
+    beta,
+    mode,
+    useblocks,
+    custom_name,
+    save_sets,
+    id_sets,
+    wpresets,
+    deep,
+    prompt,
+    nprompt,
+    steps,
+    sampler,
+    cfg,
+    seed,
+    w,
+    h,
+):
     global numadepth
     grids = []
     sep = "|"
@@ -36,30 +70,108 @@ def numanager(normalstart, xtype, xmen, ytype, ymen, esettings,
         if seed == "-1":
             seed = str(random.randrange(4294967294))
         for men in xmens[1:]:
-            numaker(xtype, men, ytype, ymen, esettings,
-                    weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-                    prompt, nprompt, steps, sampler, cfg, seed, w, h)
+            numaker(
+                xtype,
+                men,
+                ytype,
+                ymen,
+                esettings,
+                weights_a,
+                weights_b,
+                model_a,
+                model_b,
+                model_c,
+                alpha,
+                beta,
+                mode,
+                useblocks,
+                custom_name,
+                save_sets,
+                id_sets,
+                wpresets,
+                deep,
+                prompt,
+                nprompt,
+                steps,
+                sampler,
+                cfg,
+                seed,
+                w,
+                h,
+            )
     elif sep in ymen:
         ymens = ymen.split(sep)
         ymen = ymens[0]
         if seed == "-1":
             seed = str(random.randrange(4294967294))
         for men in ymens[1:]:
-            numaker(xtype, xmen, ytype, men, esettings,
-                    weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-                    prompt, nprompt, steps, sampler, cfg, seed, w, h)
+            numaker(
+                xtype,
+                xmen,
+                ytype,
+                men,
+                esettings,
+                weights_a,
+                weights_b,
+                model_a,
+                model_b,
+                model_c,
+                alpha,
+                beta,
+                mode,
+                useblocks,
+                custom_name,
+                save_sets,
+                id_sets,
+                wpresets,
+                deep,
+                prompt,
+                nprompt,
+                steps,
+                sampler,
+                cfg,
+                seed,
+                w,
+                h,
+            )
 
     if normalstart:
-        result, currentmodel, xyimage, a, b, c = sgenxyplot(xtype, xmen, ytype, ymen, esettings,
-                                                            weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-                                                            prompt, nprompt, steps, sampler, cfg, seed, w, h)
+        result, currentmodel, xyimage, a, b, c = sgenxyplot(
+            xtype,
+            xmen,
+            ytype,
+            ymen,
+            esettings,
+            weights_a,
+            weights_b,
+            model_a,
+            model_b,
+            model_c,
+            alpha,
+            beta,
+            mode,
+            useblocks,
+            custom_name,
+            save_sets,
+            id_sets,
+            wpresets,
+            deep,
+            prompt,
+            nprompt,
+            steps,
+            sampler,
+            cfg,
+            seed,
+            w,
+            h,
+        )
         if xyimage is not None:
             grids = [xyimage[0]]
         else:
             print(result)
     else:
         if numadepth == []:
-            return "no reservation", *[None]*5
+            return "no reservation", *[None] * 5
         result = currentmodel = xyimage = a = b = c = None
 
     while True:
@@ -67,8 +179,7 @@ def numanager(normalstart, xtype, xmen, ytype, ymen, esettings,
             if row[1] == "waiting":
                 numadepth[i][1] = "Operating"
                 try:
-                    result, currentmodel, xyimage, a, b, c = sgenxyplot(
-                        *row[2:])
+                    result, currentmodel, xyimage, a, b, c = sgenxyplot(*row[2:])
                 except Exception as e:
                     print(e)
                     numadepth[i][1] = "Error"
@@ -89,14 +200,70 @@ def numanager(normalstart, xtype, xmen, ytype, ymen, esettings,
     return result, currentmodel, grids, a, b, c
 
 
-def numaker(xtype, xmen, ytype, ymen, esettings,
-            # msettings=[weights_a,weights_b,model_a,model_b,model_c,alpha,beta,mode,useblocks,custom_name,save_sets,id_sets,wpresets]
-            weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-            prompt, nprompt, steps, sampler, cfg, seed, w, h):
+def numaker(
+    xtype,
+    xmen,
+    ytype,
+    ymen,
+    esettings,
+    # msettings=[weights_a,weights_b,model_a,model_b,model_c,alpha,beta,mode,useblocks,custom_name,save_sets,id_sets,wpresets]
+    weights_a,
+    weights_b,
+    model_a,
+    model_b,
+    model_c,
+    alpha,
+    beta,
+    mode,
+    useblocks,
+    custom_name,
+    save_sets,
+    id_sets,
+    wpresets,
+    deep,
+    prompt,
+    nprompt,
+    steps,
+    sampler,
+    cfg,
+    seed,
+    w,
+    h,
+):
     global numadepth
-    numadepth.append([len(numadepth)+1, "waiting", xtype, xmen, ytype, ymen, esettings,
-                      weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-                      prompt, nprompt, steps, sampler, cfg, seed, w, h])
+    numadepth.append(
+        [
+            len(numadepth) + 1,
+            "waiting",
+            xtype,
+            xmen,
+            ytype,
+            ymen,
+            esettings,
+            weights_a,
+            weights_b,
+            model_a,
+            model_b,
+            model_c,
+            alpha,
+            beta,
+            mode,
+            useblocks,
+            custom_name,
+            save_sets,
+            id_sets,
+            wpresets,
+            deep,
+            prompt,
+            nprompt,
+            steps,
+            sampler,
+            cfg,
+            seed,
+            w,
+            h,
+        ]
+    )
     return numalistmaker(copy.deepcopy(numadepth))
 
 
@@ -108,7 +275,7 @@ def nulister(redel):
         numadepth = []
     else:
         try:
-            del numadepth[int(redel-1)]
+            del numadepth[int(redel - 1)]
         except Exception as e:
             print(e)
     return numalistmaker(copy.deepcopy(numadepth))
@@ -116,11 +283,13 @@ def nulister(redel):
 
 def numalistmaker(numa):
     if numa == []:
-        return [["no data", "", ""],]
+        return [
+            ["no data", "", ""],
+        ]
     for i, r in enumerate(numa):
         r[2] = types[int(r[2])]
         r[4] = types[int(r[4])]
-        numa[i] = r[0:6]+r[8:11]+r[12:16]+r[6:8]
+        numa[i] = r[0:6] + r[8:11] + r[12:16] + r[6:8]
     return numa
 
 
@@ -129,9 +298,35 @@ def caster(news, hear):
         print(news)
 
 
-def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
-               weights_a, weights_b, model_a, model_b, model_c, alpha, beta, mode, useblocks, custom_name, save_sets, id_sets, wpresets, deep,
-               prompt, nprompt, steps, sampler, cfg, seed, w, h):
+def sgenxyplot(
+    xtype,
+    xmen,
+    ytype,
+    ymen,
+    esettings,
+    weights_a,
+    weights_b,
+    model_a,
+    model_b,
+    model_c,
+    alpha,
+    beta,
+    mode,
+    useblocks,
+    custom_name,
+    save_sets,
+    id_sets,
+    wpresets,
+    deep,
+    prompt,
+    nprompt,
+    steps,
+    sampler,
+    cfg,
+    seed,
+    w,
+    h,
+):
     global hear
     esettings = " ".join(esettings)
     # type[0:none,1:aplha,2:beta,3:seed,4:mbw,5:model_A,6:model_B,7:model_C,8:pinpoint 9:deep]
@@ -148,15 +343,16 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
 
     def castall(hear):
         if hear:
-            print(f"xmen:{xmen}, ymen:{ymen}, xtype:{xtype}, ytype:{ytype}, weights_a:{weights_a_in}, weights_b:{weights_b_in}, model_A:{model_a},model_B :{model_b}, model_C:{model_c}, alpha:{alpha},\
-        beta :{beta}, mode:{mode}, blocks:{useblocks}")
+            print(
+                f"xmen:{xmen}, ymen:{ymen}, xtype:{xtype}, ytype:{ytype}, weights_a:{weights_a_in}, weights_b:{weights_b_in}, model_A:{model_a},model_B :{model_b}, model_C:{model_c}, alpha:{alpha},\
+        beta :{beta}, mode:{mode}, blocks:{useblocks}"
+            )
 
     pinpoint = "pinpoint blocks" in xtype or "pinpoint blocks" in ytype
     usebeta = modes[2] in mode or modes[3] in mode
 
     # check and adjust format
-    print(
-        f"XY plot start, mode:{mode}, X: {xtype}, Y: {ytype}, MBW: {useblocks}")
+    print(f"XY plot start, mode:{mode}, X: {xtype}, Y: {ytype}, MBW: {useblocks}")
     castall(hear)
     None5 = [None, None, None, None, None]
     if xmen == "":
@@ -193,7 +389,7 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
             zs = zmen.splitlines()
             caster(zs, hear)
             if "mbw alpha and beta" in ztype:
-                zs = [zs[i:i+2] for i in range(0, len(zs), 2)]
+                zs = [zs[i : i + 2] for i in range(0, len(zs), 2)]
                 caster(zs, hear)
         elif "elemental" in ztype:
             zs = zmen.split("\n\n")
@@ -201,9 +397,9 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
             if "pinpoint element" in ztype:
                 zmen = zmen.replace("\n", ",")
             if "effective" in ztype:
-                zmen = ","+zmen
+                zmen = "," + zmen
                 zmen = zmen.replace("\n", ",")
-            zs = [z.strip() for z in zmen.split(',')]
+            zs = [z.strip() for z in zmen.split(",")]
             caster(zs, hear)
         if "alpha" in ztype and "effective" in aztype:
             zs = [zs[0]]
@@ -230,7 +426,7 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
 
     xyimage = []
     xcount = ycount = 0
-    allcount = len(xs)*len(ys)
+    allcount = len(xs) * len(ys)
 
     # for STOP XY bottun
     flag = False
@@ -238,33 +434,61 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
     state_mergen = False
 
     # type[0:none,1:aplha,2:beta,3:seed,4:mbw,5:model_A,6:model_B,7:model_C,8:pinpoint ]
-    blockid = ["BASE", "IN00", "IN01", "IN02", "IN03", "IN04", "IN05", "IN06", "IN07", "IN08", "IN09", "IN10", "IN11",
-               "M00", "OUT00", "OUT01", "OUT02", "OUT03", "OUT04", "OUT05", "OUT06", "OUT07", "OUT08", "OUT09", "OUT10", "OUT11"]
+    blockid = [
+        "BASE",
+        "IN00",
+        "IN01",
+        "IN02",
+        "IN03",
+        "IN04",
+        "IN05",
+        "IN06",
+        "IN07",
+        "IN08",
+        "IN09",
+        "IN10",
+        "IN11",
+        "M00",
+        "OUT00",
+        "OUT01",
+        "OUT02",
+        "OUT03",
+        "OUT04",
+        "OUT05",
+        "OUT06",
+        "OUT07",
+        "OUT08",
+        "OUT09",
+        "OUT10",
+        "OUT11",
+    ]
     # format ,IN00 IN03,IN04-IN09,OUT4,OUT05
 
     def weightsdealer(x, xtype, y, weights):
         caster(f"weights from : {weights}", hear)
         zz = x if "pinpoint blocks" in xtype else y
         za = y if "pinpoint blocks" in xtype else x
-        zz = [z.strip() for z in zz.split(' ')]
-        weights_t = [w.strip() for w in weights.split(',')]
+        zz = [z.strip() for z in zz.split(" ")]
+        weights_t = [w.strip() for w in weights.split(",")]
         if zz[0] != "NOT":
-            flagger = [False]*26
+            flagger = [False] * 26
             changer = True
         else:
-            flagger = [True]*26
+            flagger = [True] * 26
             changer = False
         for z in zz:
             if z == "NOT":
                 continue
             if "-" in z:
-                zt = [zt.strip() for zt in z.split('-')]
+                zt = [zt.strip() for zt in z.split("-")]
                 if blockid.index(zt[1]) > blockid.index(zt[0]):
-                    flagger[blockid.index(zt[0]):blockid.index(
-                        zt[1])+1] = [changer]*(blockid.index(zt[1])-blockid.index(zt[0])+1)
+                    flagger[blockid.index(zt[0]) : blockid.index(zt[1]) + 1] = [
+                        changer
+                    ] * (blockid.index(zt[1]) - blockid.index(zt[0]) + 1)
                 else:
-                    flagger[blockid.index(zt[1]):blockid.index(
-                        zt[0])+1] = [changer]*(blockid.index(zt[0])-blockid.index(zt[1])+1)
+                    flagger[blockid.index(zt[1]) : blockid.index(zt[0]) + 1] = [
+                        changer
+                    ] * (blockid.index(zt[0]) - blockid.index(zt[1]) + 1)
             else:
                 flagger[blockid.index(z)] = changer
         for i, f in enumerate(flagger):
@@ -284,7 +508,10 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
         if pinpoint or "pinpoint element" in zt or "effective" in zt:
             return
         if "mbw" in zt:
-            def weightser(z): return z, z.split(',', 1)[0]
+
+            def weightser(z):
+                return z, z.split(",", 1)[0]
+
             if "mbw alpha and beta" in zt:
                 weights_a_in, alpha = weightser(wpreseter(z[0], wpresets))
                 weights_b_in, beta = weightser(wpreseter(z[1], wpresets))
@@ -326,21 +553,48 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
                 weights_b_in = weightsdealer(x, xtype, y, weights_b)
                 weights_a_in = weights_a
             if "pinpoint element" in xtype or "effective" in xtype:
-                deep_in = deep + "," + str(x)+":" + str(y)
+                deep_in = deep + "," + str(x) + ":" + str(y)
             elif "pinpoint element" in ytype or "effective" in ytype:
-                deep_in = deep + "," + str(y)+":" + str(x)
+                deep_in = deep + "," + str(y) + ":" + str(x)
             else:
                 deep_in = deep
 
             print(
-                f"XY plot: X: {xtype}, {str(x)}, Y: {ytype}, {str(y)} ({xcount+ycount*len(xs)+1}/{allcount})")
+                f"XY plot: X: {xtype}, {str(x)}, Y: {ytype}, {str(y)} ({xcount+ycount*len(xs)+1}/{allcount})"
+            )
             if not (xtype == "seed" and xcount > 0):
-                _, currentmodel, modelid, theta_0 = smerge(weights_a_in, weights_b_in, model_a, model_b, model_c, float(
-                    alpha), float(beta), mode, useblocks, "", "", id_sets, False, deep_in, deepprint=deepprint)
+                _, currentmodel, modelid, theta_0 = smerge(
+                    weights_a_in,
+                    weights_b_in,
+                    model_a,
+                    model_b,
+                    model_c,
+                    float(alpha),
+                    float(beta),
+                    mode,
+                    useblocks,
+                    "",
+                    "",
+                    id_sets,
+                    False,
+                    deep_in,
+                    deepprint=deepprint,
+                )
                 usemodelgen(theta_0, model_a)
                 # simggen(prompt, nprompt, steps, sampler, cfg, seed, w, h,mergeinfo="",id_sets=[],modelid = "no id"):
-            image_temp = simggen(prompt, nprompt, steps, sampler,
-                                 cfg, seed, w, h, currentmodel, id_sets, modelid)
+            image_temp = simggen(
+                prompt,
+                nprompt,
+                steps,
+                sampler,
+                cfg,
+                seed,
+                w,
+                h,
+                currentmodel,
+                id_sets,
+                modelid,
+            )
             xyimage.append(*image_temp[0])
             xcount += 1
             if state_mergen:
@@ -352,7 +606,9 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
 
     if flag and ycount == 1:
         xs = xs[:xcount]
-        ys = [ys[0],]
+        ys = [
+            ys[0],
+        ]
         print(f"stopped at x={xcount},y={ycount}")
     elif flag:
         ys = ys[:ycount]
@@ -363,20 +619,31 @@ def sgenxyplot(xtype, xmen, ytype, ymen, esettings,
     if "mbw alpha and beta" in ytype:
         ys = [f"alpha:({y[0]}),beta({y[1]})" for y in ys]
 
-    xs[0] = xtype+" = "+xs[0]  # draw X label
+    xs[0] = xtype + " = " + xs[0]  # draw X label
     if ytype != types[0] or "model" in ytype:
-        ys[0] = ytype+" = "+ys[0]  # draw Y label
+        ys[0] = ytype + " = " + ys[0]  # draw Y label
 
     if ys == [""]:
         ys = [" "]
 
     if "effective" in xtype or "effective" in ytype:
-        xyimage, xs, ys = effectivechecker(
-            xyimage, xs, ys, model_a, model_b, esettings)
+        xyimage, xs, ys = effectivechecker(xyimage, xs, ys, model_a, model_b, esettings)
 
     if not "grid" in esettings:
-        gridmodel = makegridmodelname(model_a, model_b, model_c, useblocks,
-                                      mode, xtype, ytype, alpha, beta, weights_a, weights_b, usebeta)
+        gridmodel = makegridmodelname(
+            model_a,
+            model_b,
+            model_c,
+            useblocks,
+            mode,
+            xtype,
+            ytype,
+            alpha,
+            beta,
+            weights_a,
+            weights_b,
+            usebeta,
+        )
         grid = smakegrid(xyimage, xs, ys, gridmodel, image_temp[4])
         xyimage.insert(0, grid)
 
@@ -389,22 +656,44 @@ def smakegrid(imgs, xs, ys, currentmodel, p):
     hor_texts = [[images.GridAnnotation(x)] for x in xs]
 
     w, h = imgs[0].size
-    grid = Image.new('RGB', size=(len(xs) * w, len(ys) * h), color='black')
+    grid = Image.new("RGB", size=(len(xs) * w, len(ys) * h), color="black")
 
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i % len(xs) * w, i // len(xs) * h))
 
     grid = images.draw_grid_annotations(
-        grid, int(p.width), int(p.height), hor_texts, ver_texts)
-    grid = draw_origin(grid, currentmodel, w*len(xs), h*len(ys), w)
+        grid, int(p.width), int(p.height), hor_texts, ver_texts
+    )
+    grid = draw_origin(grid, currentmodel, w * len(xs), h * len(ys), w)
     if opts.grid_save:
-        images.save_image(grid, opts.outdir_txt2img_grids, "xy_grid",
-                          extension=opts.grid_format, prompt=p.prompt, seed=p.seed, grid=True, p=p)
+        images.save_image(
+            grid,
+            opts.outdir_txt2img_grids,
+            "xy_grid",
+            extension=opts.grid_format,
+            prompt=p.prompt,
+            seed=p.seed,
+            grid=True,
+            p=p,
+        )
 
     return grid
 
 
-def makegridmodelname(model_a, model_b, model_c, useblocks, mode, xtype, ytype, alpha, beta, wa, wb, usebeta):
+def makegridmodelname(
+    model_a,
+    model_b,
+    model_c,
+    useblocks,
+    mode,
+    xtype,
+    ytype,
+    alpha,
+    beta,
+    wa,
+    wb,
+    usebeta,
+):
     model_a = filenamecutter(model_a)
     model_b = filenamecutter(model_b)
     model_c = filenamecutter(model_c)
@@ -431,12 +720,12 @@ def makegridmodelname(model_a, model_b, model_c, useblocks, mode, xtype, ytype, 
 
     x = 50
     while len(wa) > x:
-        wa = wa[:x] + '\n' + wa[x:]
+        wa = wa[:x] + "\n" + wa[x:]
         x = x + 50
 
     x = 50
     while len(wb) > x:
-        wb = wb[:x] + '\n' + wb[x:]
+        wb = wb[:x] + "\n" + wb[x:]
         x = x + 50
 
     if "model" in xtype:
@@ -458,7 +747,9 @@ def makegridmodelname(model_a, model_b, model_c, useblocks, mode, xtype, ytype, 
     if modes[1] in mode:
         currentmodel = f"{model_a} \n {model_b} - {model_c})\n x alpha"
     elif modes[2] in mode:
-        currentmodel = f"{model_a} x \n(1-alpha-beta) {model_b} x alpha \n+ {model_c} x beta"
+        currentmodel = (
+            f"{model_a} x \n(1-alpha-beta) {model_b} x alpha \n+ {model_c} x beta"
+        )
     elif modes[3] in mode:
         currentmodel = f"({model_a} x(1-alpha) \n + {model_b} x alpha)*(1-beta)\n+  {model_c} x beta"
     else:
@@ -487,7 +778,7 @@ def makegridmodelname(model_a, model_b, model_c, useblocks, mode, xtype, ytype, 
 
     vals = f"\nalpha = {alpha},beta = {beta}" if not useblocks else f"\n{wa}\n{wb}"
 
-    currentmodel = currentmodel+vals
+    currentmodel = currentmodel + vals
     return currentmodel
 
 
@@ -498,8 +789,7 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
 
     model_a = filenamecutter(model_a)
     model_b = filenamecutter(model_b)
-    dir = os.path.join(opts.outdir_txt2img_samples,
-                       f"{model_a+model_b}", "difgif")
+    dir = os.path.join(opts.outdir_txt2img_samples, f"{model_a+model_b}", "difgif")
 
     if "gif" in esettings:
         try:
@@ -507,13 +797,12 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
         except FileExistsError:
             pass
 
-    ls, ss = (xs.copy(), ys.copy()) if len(
-        xs) > len(ys) else (ys.copy(), xs.copy())
+    ls, ss = (xs.copy(), ys.copy()) if len(xs) > len(ys) else (ys.copy(), xs.copy())
 
-    for i in range(len(imgs)-1):
-        im2 = np.array(imgs[i+1])
+    for i in range(len(imgs) - 1):
+        im2 = np.array(imgs[i + 1])
 
-        abs_diff = cv2.absdiff(im2,  im1)
+        abs_diff = cv2.absdiff(im2, im1)
 
         abs_diff_t = cv2.threshold(abs_diff, 5, 255, cv2.THRESH_BINARY)[1]
         res = abs_diff_t.astype(np.uint8)
@@ -527,7 +816,8 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
 
         if "gif" in esettings:
             gifpath = gifpath_t = os.path.join(
-                dir, ls[i+1].replace(":", "_")+".gif")
+                dir, ls[i + 1].replace(":", "_") + ".gif"
+            )
 
             is_file = os.path.isfile(gifpath)
             j = 0
@@ -537,8 +827,14 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
                 is_file = os.path.isfile(gifpath)
                 j = j + 1
 
-            imgs[0].save(gifpath, save_all=True, append_images=[
-                         imgs[i+1]], optimize=False, duration=1000, loop=0)
+            imgs[0].save(
+                gifpath,
+                save_all=True,
+                append_images=[imgs[i + 1]],
+                optimize=False,
+                duration=1000,
+                loop=0,
+            )
 
     nums = []
     outs = []
@@ -566,6 +862,6 @@ def effectivechecker(imgs, xs, ys, model_a, model_b, esettings):
         ss = ["diff", ss[0], "source"]
         return outs, ss, ls
     else:
-        outs = [imgs[0]]*len(diffs) + imgs[1:] + diffs
+        outs = [imgs[0]] * len(diffs) + imgs[1:] + diffs
         ss = ["source", ss[0], "diff"]
         return outs, ls, ss
