@@ -1,8 +1,8 @@
 {
-    "hashes": {
-        "checkpoint/2D-Mix.ckpt": {
-            "mtime": 1677079057.7750041,
-            "sha256": "d8fcc344854ffec235dc749bbb3bdb6da2117dfef4106bfd94e524d2d9f60cd8"
-        }
+  "hashes": {
+    "checkpoint/2D-Mix.ckpt": {
+      "mtime": 1677079057.7750041,
+      "sha256": "d8fcc344854ffec235dc749bbb3bdb6da2117dfef4106bfd94e524d2d9f60cd8"
     }
+  }
 }
