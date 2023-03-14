@@ -271,7 +271,7 @@ def load_model_weights_m(model,model_a,model_b,save):
     sd_model_name = checkpoint_info.model_name
 
     cachenum = shared.opts.sd_checkpoint_cache
-    
+
     if save:        
         if model_a:
             load_model(checkpoint_info)
@@ -281,15 +281,7 @@ def load_model_weights_m(model,model_a,model_b,save):
     if checkpoint_info in checkpoints_loaded:
         print(f"Loading weights [{sd_model_name}] from cache")
         return checkpoints_loaded[checkpoint_info]
-    elif cachenum>0 and model_a:
-        load_model(checkpoint_info)
-        print(f"Loading weights [{sd_model_name}] from cache")
-        return checkpoints_loaded[checkpoint_info]
-    elif cachenum>1 and model_b:
-        load_model(checkpoint_info)
-        print(f"Loading weights [{sd_model_name}] from cache")
-        return checkpoints_loaded[checkpoint_info]
-    elif cachenum>2:
+    elif cachenum > 0 and model_a or cachenum > 1 and model_b or cachenum > 2:
         load_model(checkpoint_info)
         print(f"Loading weights [{sd_model_name}] from cache")
         return checkpoints_loaded[checkpoint_info]
@@ -318,15 +310,14 @@ def makemodelname(weights_a,weights_b,model_a, model_b,model_c, alpha,beta,usebl
             currentmodel =f"({model_a} x (1-alpha) + {model_b} x alpha)x(1-beta)+  {model_c} x beta ({str(round(alpha,3))},{','.join(str(s) for s in weights_a)})_({str(round(beta,3))},{','.join(str(s) for s in weights_b)})"
         else:
             currentmodel =f"{model_a} x (1-alpha) + {model_b} x alpha ({str(round(alpha,3))},{','.join(str(s) for s in weights_a)})"
+    elif modes[1] in mode:#add
+        currentmodel =f"{model_a} + ({model_b} -  {model_c}) x {str(round(alpha,3))}"
+    elif modes[2] in mode:#triple
+        currentmodel =f"{model_a} x {str(round(1-alpha-beta,3))} + {model_b} x {str(round(alpha,3))} + {model_c} x {str(round(beta,3))}"
+    elif modes[3] in mode:#twice
+        currentmodel =f"({model_a} x {str(round(1-alpha,3))} +{model_b} x {str(round(alpha,3))}) x {str(round(1-beta,3))} + {model_c} x {str(round(beta,3))}"
     else:
-        if modes[1] in mode:#add
-            currentmodel =f"{model_a} + ({model_b} -  {model_c}) x {str(round(alpha,3))}"
-        elif modes[2] in mode:#triple
-            currentmodel =f"{model_a} x {str(round(1-alpha-beta,3))} + {model_b} x {str(round(alpha,3))} + {model_c} x {str(round(beta,3))}"
-        elif modes[3] in mode:#twice
-            currentmodel =f"({model_a} x {str(round(1-alpha,3))} +{model_b} x {str(round(alpha,3))}) x {str(round(1-beta,3))} + {model_c} x {str(round(beta,3))}"
-        else:
-            currentmodel =f"{model_a} x {str(round(1-alpha,3))} + {model_b} x {str(round(alpha,3))}"
+        currentmodel =f"{model_a} x {str(round(1-alpha,3))} + {model_b} x {str(round(alpha,3))}"
     return currentmodel
 
 path_root = scripts.basedir()
@@ -339,16 +330,22 @@ def rwmergelog(mergedname = "",settings= [],id = 0):
         with open(filepath, 'a') as f:
                                        #msettings=[0 weights_a,1 weights_b,2 model_a,3 model_b,4 model_c,5 base_alpha,6 base_beta,7 mode,8 useblocks,9 custom_name,10 save_sets,11 id_sets,12 wpresets]
             f.writelines('"ID","time","name","weights alpha","weights beta","model A","model B","model C","alpha","beta","mode","use MBW","plus lora","custum name","save setting","use ID"\n')
-    with  open(filepath, 'r+') as f:
+    with open(filepath, 'r+') as f:
         reader = csv.reader(f)
-        mlist = [raw for raw in reader]
+        mlist = list(reader)
         if mergedname != "":
             mergeid = len(mlist)
             setting.insert(0,mergedname)
             for i,x in enumerate(setting):
                 if "," in str(x):setting[i] = f'"{str(setting[i])}"'
             text = ",".join(map(str, setting))
-            text=str(mergeid)+","+datetime.datetime.now().strftime('%Y.%m.%d %H.%M.%S.%f')[:-7]+"," + text + "\n"
+            text = (
+                f"{mergeid},"
+                + datetime.datetime.now().strftime('%Y.%m.%d %H.%M.%S.%f')[:-7]
+                + ","
+                + text
+                + "\n"
+            )
             f.writelines(text)
             return mergeid
         try:
@@ -395,18 +392,18 @@ def wpreseter(w,presets):
     return w
 
 def fullpathfromname(name):
-    if hash == "" or hash ==[]: return ""
+    if hash in ["", []]: return ""
     checkpoint_info = sd_models.get_closet_checkpoint_match(name)
     return checkpoint_info.filename
 
 def namefromhash(hash):
-    if hash == "" or hash ==[]: return ""
+    if hash in ["", []]: return ""
     checkpoint_info = sd_models.get_closet_checkpoint_match(hash)
     return checkpoint_info.model_name
 
 def hashfromname(name):
     from modules import sd_models
-    if name == "" or name ==[]: return ""
+    if name in ["", []]: return ""
     checkpoint_info = sd_models.get_closet_checkpoint_match(name)
     if checkpoint_info.shorthash is not None:
         return checkpoint_info.shorthash
@@ -446,7 +443,8 @@ def simggen(prompt, nprompt, steps, sampler, cfg, seed, w, h,mergeinfo="",id_set
     processed:Processed = processing.process_images(p)
     if "image" in id_sets: processed.images[0] =  draw_origin(processed.images[0], str(modelid),w,h,w)
     image = processed.images[0]
-    if "PNG info" in id_sets:mergeinfo = mergeinfo + " ID " + str(modelid)
+    if "PNG info" in id_sets:
+        mergeinfo = f"{mergeinfo} ID {str(modelid)}"
 
     infotext = create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds)
     if infotext.count("Steps: ")>1:

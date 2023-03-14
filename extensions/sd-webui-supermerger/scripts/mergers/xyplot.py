@@ -107,7 +107,7 @@ def numalistmaker(numa):
     for i,r in enumerate(numa):
         r[2] =  types[int(r[2])]
         r[4] =  types[int(r[4])]
-        numa[i] = r[0:6]+r[8:11]+r[12:16]+r[6:8]
+        numa[i] = r[:6] + r[8:11] + r[12:16] + r[6:8]
     return numa
 
 def caster(news,hear):
@@ -364,18 +364,18 @@ def makegridmodelname(model_a, model_b,model_c, useblocks,mode,xtype,ytype,alpha
         if "alpha" in ytype:wa = "Y"
         if usebeta or " beta" in ytype:wb = "Y"
 
-    wa = "alpha = " + wa
-    wb = "beta = " + wb
+    wa = f"alpha = {wa}"
+    wb = f"beta = {wb}"
 
     x = 50
     while len(wa) > x:
         wa  = wa[:x] + '\n' + wa[x:]
-        x = x + 50
+        x += 50
 
     x = 50
     while len(wb) > x:
         wb  = wb[:x] + '\n' + wb[x:]
-        x = x + 50
+        x += 50
 
     if "model" in xtype:
         if "A" in xtype:model_a = "model A"
@@ -397,7 +397,7 @@ def makegridmodelname(model_a, model_b,model_c, useblocks,mode,xtype,ytype,alpha
         currentmodel =f"{model_a} x (1-alpha) \n {model_b} x alpha"
 
     if "alpha" in xtype:alpha = "X"
-    if "beta" in xtype:beta = "X" 
+    if "beta" in xtype:beta = "X"
     if "alpha" in ytype:alpha = "Y"
     if "beta" in ytype:beta = "Y"
 
@@ -409,7 +409,7 @@ def makegridmodelname(model_a, model_b,model_c, useblocks,mode,xtype,ytype,alpha
         if "alpha" in ytype: alpha = "Y"
         if "beta" in ytype or usebeta: beta = "Y"
 
-    vals = f"\nalpha = {alpha},beta = {beta}" if not useblocks else f"\n{wa}\n{wb}"
+    vals = f"\n{wa}\n{wb}" if useblocks else f"\nalpha = {alpha},beta = {beta}"
 
     currentmodel = currentmodel+vals
     return currentmodel
@@ -418,7 +418,7 @@ def effectivechecker(imgs,xs,ys,model_a,model_b,esettings):
     diffs = []
     outnum =[]
     im1 = np.array(imgs[0])
-    
+
     model_a = filenamecutter(model_a)
     model_b = filenamecutter(model_b)
     dir = os.path.join(opts.outdir_txt2img_samples,f"{model_a+model_b}","difgif")
@@ -448,7 +448,7 @@ def effectivechecker(imgs,xs,ys,model_a,model_b,esettings):
 
         if "gif" in esettings:
             gifpath = gifpath_t = os.path.join(dir,ls[i+1].replace(":","_")+".gif")
-            
+
             is_file = os.path.isfile(gifpath)
             j = 0
             while is_file:
@@ -479,9 +479,7 @@ def effectivechecker(imgs,xs,ys,model_a,model_b,esettings):
 
     if len(ys) > len (xs):
         for diff,img in zip(diffs,imgs[1:]):
-            outs.append(diff)
-            outs.append(img)
-            outs.append(imgs[0])
+            outs.extend((diff, img, imgs[0]))
         ss = ["diff",ss[0],"source"]
         return outs,ss,ls
     else:

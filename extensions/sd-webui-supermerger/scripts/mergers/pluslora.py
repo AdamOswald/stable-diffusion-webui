@@ -54,7 +54,7 @@ def on_ui_tabs():
     except OSError as e:
         sml_lbwpresets=LWEIGHTSPRESETS 
 
-    with gr.Blocks(analytics_enabled=False) :
+    with gr.Blocks(analytics_enabled=False):
         sml_submit_result = gr.Textbox(label="Message")
         with gr.Row().style(equal_height=False):
             sml_cpmerge = gr.Button(elem_id="model_merger_merge", value="Merge to Checkpoint",variant='primary')
@@ -72,7 +72,7 @@ def on_ui_tabs():
             precision = gr.Radio(label = "save precision",choices=["float","fp16","bf16"],value = "fp16",type="value")
         with gr.Row().style(equal_height=False):
           sml_dim = gr.Radio(label = "remake dimension",choices = ["no","auto",*[2**(x+2) for x in range(9)]],value = "no",type = "value") 
-          sml_filename = gr.Textbox(label="filename(option)",lines=1,visible =True,interactive  = True)  
+          sml_filename = gr.Textbox(label="filename(option)",lines=1,visible =True,interactive  = True)
         sml_loranames = gr.Textbox(label='LoRAname1:ratio1:Blocks1,LoRAname2:ratio2:Blocks2,...(":blocks" is option, not necessary)',lines=1,value="",visible =True)
         sml_dims = gr.CheckboxGroup(label = "limit dimension",choices=[],value = [],type="value",interactive=True,visible = False)
         with gr.Row().style(equal_height=False):
@@ -111,18 +111,20 @@ def on_ui_tabs():
         sml_update.click(fn = updateloras,outputs = [sml_loras])
 
         def calculatedim():
-          print("listing dimensions...")
-          for n in  tqdm(lora.available_loras.items()):
-              if n[0] in llist:
-                if llist[n[0]] !="": continue
-              c_lora = lora.available_loras.get(n[0], None) 
-              d = dimgetter(c_lora.filename)
-              if d not in dlist:
-                if type(d) == int :dlist.append(d)
-                elif d not in dn: dn.append(d)
-              llist[n[0]] = d
-          dlist.sort()
-          return gr.update(choices = [f"{x[0]}({x[1]})" for x in llist.items()],value =[]),gr.update(visible =True,choices = [x for x in (dlist+dn)])
+            print("listing dimensions...")
+            for n in tqdm(lora.available_loras.items()):
+                if n[0] in llist and llist[n[0]] != "":
+                    continue
+                c_lora = lora.available_loras.get(n[0], None)
+                d = dimgetter(c_lora.filename)
+                if d not in dlist:
+                  if type(d) == int :dlist.append(d)
+                  elif d not in dn: dn.append(d)
+                llist[n[0]] = d
+            dlist.sort()
+            return gr.update(
+                choices=[f"{x[0]}({x[1]})" for x in llist.items()], value=[]
+            ), gr.update(visible=True, choices=list(dlist + dn))
 
         sml_calcdim.click(
             fn=calculatedim,
@@ -131,20 +133,21 @@ def on_ui_tabs():
         )
 
         def dimselector(dims):
-          if dims ==[]:return gr.update(choices = [f"{x[0]}({x[1]})" for x in llist.items()])
-          rl=[]
-          for d in dims:
-            for i in llist.items():
-              if d == i[1]:rl.append(f"{i[0]}({i[1]})")
-          return gr.update(choices = [l for l in rl],value =[])
+            if dims ==[]:return gr.update(choices = [f"{x[0]}({x[1]})" for x in llist.items()])
+            rl=[]
+            for d in dims:
+              for i in llist.items():
+                if d == i[1]:rl.append(f"{i[0]}({i[1]})")
+            return gr.update(choices=list(rl), value =[])
 
         def llister(names):
-          if names ==[] : return ""
-          else:
+            if names ==[]:
+                if names ==[] : return ""
             for i,n in enumerate(names):
               if "(" in n:names[i] = n[:n.rfind("(")]
             return ":1.0,".join(names)+":1.0"
-        sml_loras.change(fn=llister,inputs=[sml_loras],outputs=[sml_loranames])     
+
+        sml_loras.change(fn=llister,inputs=[sml_loras],outputs=[sml_loranames])
         sml_dims.change(fn=dimselector,inputs=[sml_dims],outputs=[sml_loras])  
 
 def makelora(model_a,model_b,dim,saveto,settings,alpha,beta,precision):
@@ -154,11 +157,11 @@ def makelora(model_a,model_b,dim,saveto,settings,alpha,beta,precision):
     gc.collect()
 
     if saveto =="" : saveto = makeloraname(model_a,model_b)
-    if not ".safetensors" in saveto :saveto  += ".safetensors"
+    if ".safetensors" not in saveto:saveto  += ".safetensors"
     saveto = os.path.join(shared.cmd_opts.lora_dir,saveto)
 
     dim = 128 if type(dim) != int else int(dim)
-    if os.path.isfile(saveto ) and not "overwrite" in settings:
+    if os.path.isfile(saveto) and "overwrite" not in settings:
         _err_msg = f"Output file ({saveto}) existed and was not saved"
         print(_err_msg)
         return _err_msg
@@ -169,7 +172,7 @@ def makelora(model_a,model_b,dim,saveto,settings,alpha,beta,precision):
 def lmerge(loranames,loraratioss,settings,filename,dim,precision):
     import lora
     loras_on_disk = [lora.available_loras.get(name, None) for name in loranames]
-    if any([x is None for x in loras_on_disk]):
+    if any(x is None for x in loras_on_disk):
         lora.list_available_loras()
 
         loras_on_disk = [lora.available_loras.get(name, None) for name in loranames]
@@ -180,11 +183,7 @@ def lmerge(loranames,loraratioss,settings,filename,dim,precision):
         lnames[i] = n.split(":")
 
     loraratios=loraratioss.splitlines()
-    ldict ={}
-
-    for i,l in enumerate(loraratios):
-        ldict[l.split(":")[0]]=l.split(":")[1]
-
+    ldict = {l.split(":")[0]: l.split(":")[1] for l in loraratios}
     ln = []
     lr = []
     ld = []
@@ -204,10 +203,10 @@ def lmerge(loranames,loraratioss,settings,filename,dim,precision):
         if d > dmax : dmax = d
 
     if filename =="":filename =loranames.replace(",","+").replace(":","_")
-    if not ".safetensors" in filename:filename += ".safetensors"
+    if ".safetensors" not in filename:filename += ".safetensors"
     filename = os.path.join(shared.cmd_opts.lora_dir,filename)
-  
-    dim = int(dim) if dim != "no" and dim != "auto" else 0
+
+    dim = int(dim) if dim not in ["no", "auto"] else 0
 
     if dim > 0:
       print("change demension to ", dim)
@@ -218,13 +217,13 @@ def lmerge(loranames,loraratioss,settings,filename,dim,precision):
     else:
       sd = merge_lora_models(ln, lr,settings)
 
-    if os.path.isfile(filename) and not "overwrite" in settings:
+    if os.path.isfile(filename) and "overwrite" not in settings:
         _err_msg = f"Output file ({filename}) existed and was not saved"
         print(_err_msg)
         return _err_msg
 
     save_to_file(filename,sd,sd, str_to_dtype(precision))
-    return "saved : "+filename
+    return f"saved : {filename}"
 
 def pluslora(lnames,loraratios,settings,output,model,precision):
     if model == []:
@@ -240,11 +239,7 @@ def pluslora(lnames,loraratios,settings,output,model,precision):
         lnames[i] = n.split(":")
 
     loraratios=loraratios.splitlines()
-    ldict ={}
-
-    for i,l in enumerate(loraratios):
-        ldict[l.split(":")[0].strip()]=l.split(":")[1]
-
+    ldict = {l.split(":")[0].strip(): l.split(":")[1] for l in loraratios}
     names=[]
     filenames=[]
     lweis=[]
@@ -260,10 +255,10 @@ def pluslora(lnames,loraratios,settings,output,model,precision):
         filenames.append(c_lora.filename)
         lweis.append(ratio)
 
-    modeln=filenamecutter(model,True)   
+    modeln=filenamecutter(model,True)
     dname = modeln
     for n in names:
-      dname = dname + "+"+n
+        dname = f"{dname}+{n}"
 
     checkpoint_info = sd_models.get_closet_checkpoint_match(model)
     print(f"Loading {model}")
@@ -275,43 +270,49 @@ def pluslora(lnames,loraratios,settings,output,model,precision):
             skey = key.replace(".","_").replace("_weight","")
             keychanger[skey.split("model_",1)[1]] = key
 
-    for name,filename, lwei in zip(names,filenames, lweis):
-      print(f"loading: {name}")
-      lora_sd = load_state_dict(filename, torch.float)
+    for name, filename, lwei in zip(names,filenames, lweis):
+        print(f"loading: {name}")
+        lora_sd = load_state_dict(filename, torch.float)
 
-      print(f"merging..." ,lwei)
-      for key in lora_sd.keys():
-        ratio = 1
-        for i,block in enumerate(LORABLOCKS):
-            if block in key:
-                ratio = lwei[i]
+        print("merging...", lwei)
+        for key in lora_sd.keys():
+            ratio = 1
+            for i,block in enumerate(LORABLOCKS):
+                if block in key:
+                    ratio = lwei[i]
 
-        fullkey = convert_diffusers_name_to_compvis(key)
-        msd_key, lora_key = fullkey.split(".", 1)
+            fullkey = convert_diffusers_name_to_compvis(key)
+            msd_key, lora_key = fullkey.split(".", 1)
 
-        if "lora_down" in key:
-          up_key = key.replace("lora_down", "lora_up")
-          alpha_key = key[:key.index("lora_down")] + 'alpha'
+            if "lora_down" in key:
+                up_key = key.replace("lora_down", "lora_up")
+                alpha_key = key[:key.index("lora_down")] + 'alpha'
 
-          # print(f"apply {key} to {module}")
+                # print(f"apply {key} to {module}")
 
-          down_weight = lora_sd[key]
-          up_weight = lora_sd[up_key]
+                down_weight = lora_sd[key]
+                up_weight = lora_sd[up_key]
 
-          dim = down_weight.size()[0]
-          alpha = lora_sd.get(alpha_key, dim)
-          scale = alpha / dim
-          # W <- W + U * D
-          weight = theta_0[keychanger[msd_key]]
+                dim = down_weight.size()[0]
+                alpha = lora_sd.get(alpha_key, dim)
+                scale = alpha / dim
+                # W <- W + U * D
+                weight = theta_0[keychanger[msd_key]]
 
-          if not len(down_weight.size()) == 4:
-            # linear
-            weight = weight  + ratio * (up_weight @ down_weight) * scale
-          else:
-            # conv2d
-            weight = weight  + ratio * (up_weight.squeeze(3).squeeze(2) @ down_weight.squeeze(3).squeeze(2)
-                                        ).unsqueeze(2).unsqueeze(3) * scale
-          theta_0[keychanger[msd_key]] = torch.nn.Parameter(weight)
+                weight = (
+                    weight
+                    + ratio
+                    * (
+                        up_weight.squeeze(3).squeeze(2)
+                        @ down_weight.squeeze(3).squeeze(2)
+                    )
+                    .unsqueeze(2)
+                    .unsqueeze(3)
+                    * scale
+                    if len(down_weight.size()) == 4
+                    else weight + ratio * (up_weight @ down_weight) * scale
+                )
+                theta_0[keychanger[msd_key]] = torch.nn.Parameter(weight)
     #usemodelgen(theta_0,model)
     settings.append(precision)
     result = savemodel(theta_0,dname,output,settings,model)
@@ -366,123 +367,122 @@ CLAMP_QUANTILE = 0.99
 MIN_DIFF = 1e-6
 
 def str_to_dtype(p):
-  if p == 'float':
-    return torch.float
-  if p == 'fp16':
-    return torch.float16
-  if p == 'bf16':
-    return torch.bfloat16
-  return None
+    if p == 'float':
+      return torch.float
+    if p == 'fp16':
+      return torch.float16
+    return torch.bfloat16 if p == 'bf16' else None
 
 def svd(model_a,model_b,v2,dim,save_precision,save_to,alpha,beta):
-  save_dtype = str_to_dtype(save_precision)
+    save_dtype = str_to_dtype(save_precision)
 
-  if model_a == model_b:
-    text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
-    text_encoder_o, _, unet_o = text_encoder_t, _, unet_t
-  else:
-    print(f"loading SD model : {model_b}")
-    text_encoder_o, _, unet_o = load_models_from_stable_diffusion_checkpoint(v2, model_b)
-    
-    print(f"loading SD model : {model_a}")
-    text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
+    if model_a == model_b:
+      text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
+      text_encoder_o, _, unet_o = text_encoder_t, _, unet_t
+    else:
+      print(f"loading SD model : {model_b}")
+      text_encoder_o, _, unet_o = load_models_from_stable_diffusion_checkpoint(v2, model_b)
 
-  # create LoRA network to extract weights: Use dim (rank) as alpha
-  lora_network_o = create_network(1.0, dim, dim, None, text_encoder_o, unet_o)
-  lora_network_t = create_network(1.0, dim, dim, None, text_encoder_t, unet_t)
-  assert len(lora_network_o.text_encoder_loras) == len(
-      lora_network_t.text_encoder_loras), f"model version is different (SD1.x vs SD2.x) / それぞれのモデルのバージョンが違います（SD1.xベースとSD2.xベース） "
-  # get diffs
-  diffs = {}
-  text_encoder_different = False
-  for i, (lora_o, lora_t) in enumerate(zip(lora_network_o.text_encoder_loras, lora_network_t.text_encoder_loras)):
-    lora_name = lora_o.lora_name
-    module_o = lora_o.org_module
-    module_t = lora_t.org_module
-    diff = alpha*module_t.weight - beta*module_o.weight
+      print(f"loading SD model : {model_a}")
+      text_encoder_t, _, unet_t = load_models_from_stable_diffusion_checkpoint(v2, model_a)
 
-    # Text Encoder might be same
-    if torch.max(torch.abs(diff)) > MIN_DIFF:
-      text_encoder_different = True
-
-    diff = diff.float()
-    diffs[lora_name] = diff
-
-  if not text_encoder_different:
-    print("Text encoder is same. Extract U-Net only.")
-    lora_network_o.text_encoder_loras = []
+    # create LoRA network to extract weights: Use dim (rank) as alpha
+    lora_network_o = create_network(1.0, dim, dim, None, text_encoder_o, unet_o)
+    lora_network_t = create_network(1.0, dim, dim, None, text_encoder_t, unet_t)
+    assert len(lora_network_o.text_encoder_loras) == len(
+        lora_network_t.text_encoder_loras
+    ), "model version is different (SD1.x vs SD2.x) / それぞれのモデルのバージョンが違います（SD1.xベースとSD2.xベース） "
+    # get diffs
     diffs = {}
+    text_encoder_different = False
+    for lora_o, lora_t in zip(lora_network_o.text_encoder_loras, lora_network_t.text_encoder_loras):
+        lora_name = lora_o.lora_name
+        module_o = lora_o.org_module
+        module_t = lora_t.org_module
+        diff = alpha*module_t.weight - beta*module_o.weight
 
-  for i, (lora_o, lora_t) in enumerate(zip(lora_network_o.unet_loras, lora_network_t.unet_loras)):
-    lora_name = lora_o.lora_name
-    module_o = lora_o.org_module
-    module_t = lora_t.org_module
-    diff = alpha*module_t.weight - beta*module_o.weight
-    diff = diff.float()
+        # Text Encoder might be same
+        if torch.max(torch.abs(diff)) > MIN_DIFF:
+          text_encoder_different = True
 
-    diffs[lora_name] = diff
+        diff = diff.float()
+        diffs[lora_name] = diff
 
-  # make LoRA with svd
-  print("calculating by svd")
-  rank = dim
-  lora_weights = {}
-  with torch.no_grad():
-    for lora_name, mat in tqdm(list(diffs.items())):
-      conv2d = (len(mat.size()) == 4)
-      if conv2d:
-        mat = mat.squeeze()
+    if not text_encoder_different:
+      print("Text encoder is same. Extract U-Net only.")
+      lora_network_o.text_encoder_loras = []
+      diffs = {}
 
-      U, S, Vh = torch.linalg.svd(mat)
+    for lora_o, lora_t in zip(lora_network_o.unet_loras, lora_network_t.unet_loras):
+        lora_name = lora_o.lora_name
+        module_o = lora_o.org_module
+        module_t = lora_t.org_module
+        diff = alpha*module_t.weight - beta*module_o.weight
+        diff = diff.float()
 
-      U = U[:, :rank]
-      S = S[:rank]
-      U = U @ torch.diag(S)
+        diffs[lora_name] = diff
 
-      Vh = Vh[:rank, :]
+    # make LoRA with svd
+    print("calculating by svd")
+    rank = dim
+    lora_weights = {}
+    with torch.no_grad():
+      for lora_name, mat in tqdm(list(diffs.items())):
+        conv2d = (len(mat.size()) == 4)
+        if conv2d:
+          mat = mat.squeeze()
 
-      dist = torch.cat([U.flatten(), Vh.flatten()])
-      hi_val = torch.quantile(dist, CLAMP_QUANTILE)
-      low_val = -hi_val
+        U, S, Vh = torch.linalg.svd(mat)
 
-      U = U.clamp(low_val, hi_val)
-      Vh = Vh.clamp(low_val, hi_val)
+        U = U[:, :rank]
+        S = S[:rank]
+        U = U @ torch.diag(S)
 
-      lora_weights[lora_name] = (U, Vh)
+        Vh = Vh[:rank, :]
 
-  # make state dict for LoRA
-  lora_network_o.apply_to(text_encoder_o, unet_o, text_encoder_different, True)   # to make state dict
-  lora_sd = lora_network_o.state_dict()
-  print(f"LoRA has {len(lora_sd)} weights.")
+        dist = torch.cat([U.flatten(), Vh.flatten()])
+        hi_val = torch.quantile(dist, CLAMP_QUANTILE)
+        low_val = -hi_val
 
-  for key in list(lora_sd.keys()):
-    if "alpha" in key:
-      continue
+        U = U.clamp(low_val, hi_val)
+        Vh = Vh.clamp(low_val, hi_val)
 
-    lora_name = key.split('.')[0]
-    i = 0 if "lora_up" in key else 1
+        lora_weights[lora_name] = (U, Vh)
 
-    weights = lora_weights[lora_name][i]
-    # print(key, i, weights.size(), lora_sd[key].size())
-    if len(lora_sd[key].size()) == 4:
-      weights = weights.unsqueeze(2).unsqueeze(3)
+    # make state dict for LoRA
+    lora_network_o.apply_to(text_encoder_o, unet_o, text_encoder_different, True)   # to make state dict
+    lora_sd = lora_network_o.state_dict()
+    print(f"LoRA has {len(lora_sd)} weights.")
 
-    assert weights.size() == lora_sd[key].size(), f"size unmatch: {key}"
-    lora_sd[key] = weights
+    for key in list(lora_sd.keys()):
+      if "alpha" in key:
+        continue
 
-  # load state dict to LoRA and save it
-  info = lora_network_o.load_state_dict(lora_sd)
-  print(f"Loading extracted LoRA weights: {info}")
+      lora_name = key.split('.')[0]
+      i = 0 if "lora_up" in key else 1
 
-  dir_name = os.path.dirname(save_to)
-  if dir_name and not os.path.exists(dir_name):
-    os.makedirs(dir_name, exist_ok=True)
+      weights = lora_weights[lora_name][i]
+      # print(key, i, weights.size(), lora_sd[key].size())
+      if len(lora_sd[key].size()) == 4:
+        weights = weights.unsqueeze(2).unsqueeze(3)
 
-  # minimum metadata
-  metadata = {"ss_network_dim": str(dim), "ss_network_alpha": str(dim)}
+      assert weights.size() == lora_sd[key].size(), f"size unmatch: {key}"
+      lora_sd[key] = weights
 
-  lora_network_o.save_weights(save_to, save_dtype, metadata)
-  print(f"LoRA weights are saved to: {save_to}")
-  return save_to  
+    # load state dict to LoRA and save it
+    info = lora_network_o.load_state_dict(lora_sd)
+    print(f"Loading extracted LoRA weights: {info}")
+
+    dir_name = os.path.dirname(save_to)
+    if dir_name and not os.path.exists(dir_name):
+      os.makedirs(dir_name, exist_ok=True)
+
+    # minimum metadata
+    metadata = {"ss_network_dim": str(dim), "ss_network_alpha": str(dim)}
+
+    lora_network_o.save_weights(save_to, save_dtype, metadata)
+    print(f"LoRA weights are saved to: {save_to}")
+    return save_to  
 
 class LoRAModule(torch.nn.Module):
   """
@@ -539,38 +539,38 @@ class LoRANetwork(torch.nn.Module):
   LORA_PREFIX_TEXT_ENCODER = 'lora_te'
 
   def __init__(self, text_encoder, unet, multiplier=1.0, lora_dim=4, alpha=1) -> None:
-    super().__init__()
-    self.multiplier = multiplier
-    self.lora_dim = lora_dim
-    self.alpha = alpha
+      super().__init__()
+      self.multiplier = multiplier
+      self.lora_dim = lora_dim
+      self.alpha = alpha
 
-    # create module instances
-    def create_modules(prefix, root_module: torch.nn.Module, target_replace_modules) -> List[LoRAModule]:
-      loras = []
-      for name, module in root_module.named_modules():
-        if module.__class__.__name__ in target_replace_modules:
-          for child_name, child_module in module.named_modules():
-            if child_module.__class__.__name__ == "Linear" or (child_module.__class__.__name__ == "Conv2d" and child_module.kernel_size == (1, 1)):
-              lora_name = prefix + '.' + name + '.' + child_name
-              lora_name = lora_name.replace('.', '_')
-              lora = LoRAModule(lora_name, child_module, self.multiplier, self.lora_dim, self.alpha)
-              loras.append(lora)
-      return loras
+        # create module instances
+      def create_modules(prefix, root_module: torch.nn.Module, target_replace_modules) -> List[LoRAModule]:
+          loras = []
+          for name, module in root_module.named_modules():
+              if module.__class__.__name__ in target_replace_modules:
+                  for child_name, child_module in module.named_modules():
+                      if child_module.__class__.__name__ == "Linear" or (child_module.__class__.__name__ == "Conv2d" and child_module.kernel_size == (1, 1)):
+                          lora_name = f'{prefix}.{name}.{child_name}'
+                          lora_name = lora_name.replace('.', '_')
+                          lora = LoRAModule(lora_name, child_module, self.multiplier, self.lora_dim, self.alpha)
+                          loras.append(lora)
+          return loras
 
-    self.text_encoder_loras = create_modules(LoRANetwork.LORA_PREFIX_TEXT_ENCODER,
-                                             text_encoder, LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE)
-    print(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
+      self.text_encoder_loras = create_modules(LoRANetwork.LORA_PREFIX_TEXT_ENCODER,
+                                               text_encoder, LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE)
+      print(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
 
-    self.unet_loras = create_modules(LoRANetwork.LORA_PREFIX_UNET, unet, LoRANetwork.UNET_TARGET_REPLACE_MODULE)
-    print(f"create LoRA for U-Net: {len(self.unet_loras)} modules.")
+      self.unet_loras = create_modules(LoRANetwork.LORA_PREFIX_UNET, unet, LoRANetwork.UNET_TARGET_REPLACE_MODULE)
+      print(f"create LoRA for U-Net: {len(self.unet_loras)} modules.")
 
-    self.weights_sd = None
+      self.weights_sd = None
 
-    # assertion
-    names = set()
-    for lora in self.text_encoder_loras + self.unet_loras:
-      assert lora.lora_name not in names, f"duplicated lora name: {lora.lora_name}"
-      names.add(lora.lora_name)
+      # assertion
+      names = set()
+      for lora in self.text_encoder_loras + self.unet_loras:
+        assert lora.lora_name not in names, f"duplicated lora name: {lora.lora_name}"
+        names.add(lora.lora_name)
 
   def load_weights(self, file):
     if os.path.splitext(file)[1] == '.safetensors':
@@ -580,44 +580,46 @@ class LoRANetwork(torch.nn.Module):
       self.weights_sd = torch.load(file, map_location='cpu')
 
   def apply_to(self, text_encoder, unet, apply_text_encoder=None, apply_unet=None):
-    if self.weights_sd:
-      weights_has_text_encoder = weights_has_unet = False
-      for key in self.weights_sd.keys():
-        if key.startswith(LoRANetwork.LORA_PREFIX_TEXT_ENCODER):
-          weights_has_text_encoder = True
-        elif key.startswith(LoRANetwork.LORA_PREFIX_UNET):
-          weights_has_unet = True
+      if self.weights_sd:
+          weights_has_text_encoder = weights_has_unet = False
+          for key in self.weights_sd.keys():
+            if key.startswith(LoRANetwork.LORA_PREFIX_TEXT_ENCODER):
+              weights_has_text_encoder = True
+            elif key.startswith(LoRANetwork.LORA_PREFIX_UNET):
+              weights_has_unet = True
 
-      if apply_text_encoder is None:
-        apply_text_encoder = weights_has_text_encoder
+          if apply_text_encoder is None:
+            apply_text_encoder = weights_has_text_encoder
+          else:
+            assert apply_text_encoder == weights_has_text_encoder, f"text encoder weights: {weights_has_text_encoder} but text encoder flag: {apply_text_encoder} / 重みとText Encoderのフラグが矛盾しています"
+
+          if apply_unet is None:
+            apply_unet = weights_has_unet
+          else:
+            assert apply_unet == weights_has_unet, f"u-net weights: {weights_has_unet} but u-net flag: {apply_unet} / 重みとU-Netのフラグが矛盾しています"
       else:
-        assert apply_text_encoder == weights_has_text_encoder, f"text encoder weights: {weights_has_text_encoder} but text encoder flag: {apply_text_encoder} / 重みとText Encoderのフラグが矛盾しています"
+          assert (
+              apply_text_encoder is not None and apply_unet is not None
+          ), "internal error: flag not set"
 
-      if apply_unet is None:
-        apply_unet = weights_has_unet
+      if apply_text_encoder:
+        print("enable LoRA for text encoder")
       else:
-        assert apply_unet == weights_has_unet, f"u-net weights: {weights_has_unet} but u-net flag: {apply_unet} / 重みとU-Netのフラグが矛盾しています"
-    else:
-      assert apply_text_encoder is not None and apply_unet is not None, f"internal error: flag not set"
+        self.text_encoder_loras = []
 
-    if apply_text_encoder:
-      print("enable LoRA for text encoder")
-    else:
-      self.text_encoder_loras = []
+      if apply_unet:
+        print("enable LoRA for U-Net")
+      else:
+        self.unet_loras = []
 
-    if apply_unet:
-      print("enable LoRA for U-Net")
-    else:
-      self.unet_loras = []
+      for lora in self.text_encoder_loras + self.unet_loras:
+        lora.apply_to()
+        self.add_module(lora.lora_name, lora)
 
-    for lora in self.text_encoder_loras + self.unet_loras:
-      lora.apply_to()
-      self.add_module(lora.lora_name, lora)
-
-    if self.weights_sd:
-      # if some weights are not in state dict, it is ok because initial LoRA does nothing (lora_up is initialized by zeros)
-      info = self.load_state_dict(self.weights_sd, False)
-      print(f"weights are loaded: {info}")
+      if self.weights_sd:
+        # if some weights are not in state dict, it is ok because initial LoRA does nothing (lora_up is initialized by zeros)
+        info = self.load_state_dict(self.weights_sd, False)
+        print(f"weights are loaded: {info}")
 
   def enable_gradient_checkpointing(self):
     # not supported
@@ -687,98 +689,111 @@ def load_state_dict(file_name, dtype):
 
 def dimgetter(filename):
     lora_sd = load_state_dict(filename, torch.float)
-    for key in lora_sd.keys():
-          if "lora_down" in key:
-            dim = lora_sd[key].size()[0]
-            return dim
-    return "unknown"
+    return next(
+        (
+            lora_sd[key].size()[0]
+            for key in lora_sd.keys()
+            if "lora_down" in key
+        ),
+        "unknown",
+    )
 
 def blockfromkey(key):
-    for i,n in enumerate(LORABLOCKS):
-      if n in  key: return i
-    return 0
+    return next((i for i, n in enumerate(LORABLOCKS) if n in  key), 0)
 
 def merge_lora_models_dim(models, ratios, new_rank,sets):
-  merged_sd = {}
-  fugou = 1
-  for model, ratios in zip(models, ratios):
-    merge_dtype = torch.float
-    lora_sd = load_state_dict(model, merge_dtype)
+    merged_sd = {}
+    fugou = 1
+    for model, ratios in zip(models, ratios):
+        merge_dtype = torch.float
+        lora_sd = load_state_dict(model, merge_dtype)
 
-    # merge
-    print(f"merging {model}: {ratios}")
-    for key in tqdm(list(lora_sd.keys())):
-      if 'lora_down' not in key:
-        continue
-      lora_module_name = key[:key.rfind(".lora_down")]
+        # merge
+        print(f"merging {model}: {ratios}")
+        for key in tqdm(list(lora_sd.keys())):
+            if 'lora_down' not in key:
+              continue
+            lora_module_name = key[:key.rfind(".lora_down")]
 
-      down_weight = lora_sd[key]
-      network_dim = down_weight.size()[0]
+            down_weight = lora_sd[key]
+            network_dim = down_weight.size()[0]
 
-      up_weight = lora_sd[lora_module_name + '.lora_up.weight']
-      alpha = lora_sd.get(lora_module_name + '.alpha', network_dim)
+            up_weight = lora_sd[f'{lora_module_name}.lora_up.weight']
+            alpha = lora_sd.get(f'{lora_module_name}.alpha', network_dim)
 
-      in_dim = down_weight.size()[1]
-      out_dim = up_weight.size()[0]
-      conv2d = len(down_weight.size()) == 4
+            in_dim = down_weight.size()[1]
+            out_dim = up_weight.size()[0]
+            conv2d = len(down_weight.size()) == 4
      # print(lora_module_name, network_dim, alpha, in_dim, out_dim)
 
-      # make original weight if not exist
-      if lora_module_name not in merged_sd:
-        weight = torch.zeros((out_dim, in_dim, 1, 1) if conv2d else (out_dim, in_dim), dtype=merge_dtype)
-      else:
-        weight = merged_sd[lora_module_name]
+            # make original weight if not exist
+            if lora_module_name not in merged_sd:
+              weight = torch.zeros((out_dim, in_dim, 1, 1) if conv2d else (out_dim, in_dim), dtype=merge_dtype)
+            else:
+              weight = merged_sd[lora_module_name]
 
-      ratio = ratios[blockfromkey(key)]
-      if "same to Strength" in sets:
-        ratio, fugou = (ratio**0.5,1) if ratio > 0 else (abs(ratio)**0.5,-1)
-      #print(lora_module_name, ratio)
-      # W <- W + U * D
-      scale = (alpha / network_dim)
-      if not conv2d:        # linear
-        weight = weight + ratio * (up_weight @ down_weight) * scale * fugou
-      else:
-        weight = weight + ratio * (up_weight.squeeze(3).squeeze(2) @ down_weight.squeeze(3).squeeze(2)
-                                   ).unsqueeze(2).unsqueeze(3) * scale * fugou
+            ratio = ratios[blockfromkey(key)]
+            if "same to Strength" in sets:
+              ratio, fugou = (ratio**0.5,1) if ratio > 0 else (abs(ratio)**0.5,-1)
+            #print(lora_module_name, ratio)
+            # W <- W + U * D
+            scale = (alpha / network_dim)
+            weight = (
+                weight
+                + ratio
+                * (
+                    up_weight.squeeze(3).squeeze(2)
+                    @ down_weight.squeeze(3).squeeze(2)
+                )
+                .unsqueeze(2)
+                .unsqueeze(3)
+                * scale
+                * fugou
+                if conv2d
+                else weight + ratio * (up_weight @ down_weight) * scale * fugou
+            )
+            merged_sd[lora_module_name] = weight
 
-      merged_sd[lora_module_name] = weight
+    # extract from merged weights
+    print("extract new lora...")
+    merged_lora_sd = {}
+    with torch.no_grad():
+        for lora_module_name, mat in tqdm(list(merged_sd.items())):
+            conv2d = (len(mat.size()) == 4)
+            if conv2d:
+              mat = mat.squeeze()
 
-  # extract from merged weights
-  print("extract new lora...")
-  merged_lora_sd = {}
-  with torch.no_grad():
-    for lora_module_name, mat in tqdm(list(merged_sd.items())):
-      conv2d = (len(mat.size()) == 4)
-      if conv2d:
-        mat = mat.squeeze()
+            U, S, Vh = torch.linalg.svd(mat)
 
-      U, S, Vh = torch.linalg.svd(mat)
+            U = U[:, :new_rank]
+            S = S[:new_rank]
+            U = U @ torch.diag(S)
 
-      U = U[:, :new_rank]
-      S = S[:new_rank]
-      U = U @ torch.diag(S)
+            Vh = Vh[:new_rank, :]
 
-      Vh = Vh[:new_rank, :]
+            dist = torch.cat([U.flatten(), Vh.flatten()])
+            hi_val = torch.quantile(dist, CLAMP_QUANTILE)
+            low_val = -hi_val
 
-      dist = torch.cat([U.flatten(), Vh.flatten()])
-      hi_val = torch.quantile(dist, CLAMP_QUANTILE)
-      low_val = -hi_val
+            U = U.clamp(low_val, hi_val)
+            Vh = Vh.clamp(low_val, hi_val)
 
-      U = U.clamp(low_val, hi_val)
-      Vh = Vh.clamp(low_val, hi_val)
+            up_weight = U
+            down_weight = Vh
 
-      up_weight = U
-      down_weight = Vh
+            if conv2d:
+              up_weight = up_weight.unsqueeze(2).unsqueeze(3)
+              down_weight = down_weight.unsqueeze(2).unsqueeze(3)
 
-      if conv2d:
-        up_weight = up_weight.unsqueeze(2).unsqueeze(3)
-        down_weight = down_weight.unsqueeze(2).unsqueeze(3)
+            merged_lora_sd[
+                f'{lora_module_name}.lora_up.weight'
+            ] = up_weight.to("cpu").contiguous()
+            merged_lora_sd[
+                f'{lora_module_name}.lora_down.weight'
+            ] = down_weight.to("cpu").contiguous()
+            merged_lora_sd[f'{lora_module_name}.alpha'] = torch.tensor(new_rank)
 
-      merged_lora_sd[lora_module_name + '.lora_up.weight'] = up_weight.to("cpu").contiguous()
-      merged_lora_sd[lora_module_name + '.lora_down.weight'] = down_weight.to("cpu").contiguous()
-      merged_lora_sd[lora_module_name + '.alpha'] = torch.tensor(new_rank)
-
-  return merged_lora_sd
+    return merged_lora_sd
 
 def merge_lora_models(models, ratios,sets):
   base_alphas = {}                          # alpha for merged model

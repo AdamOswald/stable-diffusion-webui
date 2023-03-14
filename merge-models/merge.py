@@ -20,7 +20,7 @@ theta_0 = model_0["state_dict"]
 theta_1 = model_1["state_dict"]
 alpha = args.alpha
 
-output_file = f'{args.output}-{str(alpha)[2:] + "0"}.ckpt'
+output_file = f'{args.output}-{str(alpha)[2:]}0.ckpt'
 
 # check if output file already exists, ask to overwrite
 if os.path.isfile(output_file):
@@ -41,7 +41,7 @@ for key in tqdm(theta_0.keys(), desc="Stage 1/2"):
     # for anime model，with merging VAE model, the result will be worse (dark and blurry)
     if args.without_vae and "first_stage_model" in key:
         continue
-        
+
     if "model" in key and key in theta_1:
         theta_0[key] = (1 - alpha) * theta_0[key] + alpha * theta_1[key]
 
