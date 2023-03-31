@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import torch
+from typing import Union
 
 from modules import shared, devices, sd_models, errors
 
