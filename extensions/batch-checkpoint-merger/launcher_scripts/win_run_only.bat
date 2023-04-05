@@ -1,1 +1,0 @@
-start venv\Scripts\pythonw.exe -m batch_checkpoint_merger
