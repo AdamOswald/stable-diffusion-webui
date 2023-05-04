@@ -9,6 +9,10 @@ from modules import shared, devices, sd_models, errors
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
 re_digits = re.compile(r"\d+")
+re_unet_down_blocks = re.compile(r"lora_unet_down_blocks_(\d+)_attentions_(\d+)_(.+)")
+re_unet_mid_blocks = re.compile(r"lora_unet_mid_block_attentions_(\d+)_(.+)")
+re_unet_up_blocks = re.compile(r"lora_unet_up_blocks_(\d+)_attentions_(\d+)_(.+)")
+re_text_block = re.compile(r"lora_te_text_model_encoder_layers_(\d+)_(.+)")
 re_x_proj = re.compile(r"(.*)_([qkv]_proj)$")
 re_compiled = {}
 
@@ -66,7 +70,7 @@ def convert_diffusers_name_to_compvis(key, is_sd2):
                 return f"model_transformer_resblocks_{m[0]}_{m[1].replace('mlp_fc2', 'mlp_c_proj')}"
             else:
                 return f"model_transformer_resblocks_{m[0]}_{m[1].replace('self_attn', 'attn')}"
-
+            
         return f"transformer_text_model_encoder_layers_{m[0]}_{m[1]}"
 
     return key
@@ -223,49 +227,16 @@ def load_loras(names, multipliers=None):
         loaded_loras.append(lora)
 
 
-def lora_calc_updown(lora, module, target):
-    with torch.no_grad():
-        up = module.up.weight.to(target.device, dtype=target.dtype)
-        down = module.down.weight.to(target.device, dtype=target.dtype)
+def lora_forward(module, input, res):
+    if len(loaded_loras) == 0:
+        return res
 
-        if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
-            updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
-        else:
-            updown = up @ down
-
-        updown = updown * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
-
-        return updown
-
-
-def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
-    """
-    Applies the currently selected set of Loras to the weights of torch layer self.
-    If weights already have this particular set of loras applied, does nothing.
-    If not, restores orginal weights from backup and alters weights according to loras.
-    """
-
-    lora_layer_name = getattr(self, 'lora_layer_name', None)
-    if lora_layer_name is None:
-        return
-
-    current_names = getattr(self, "lora_current_names", ())
-    wanted_names = tuple((x.name, x.multiplier) for x in loaded_loras)
-
-    weights_backup = getattr(self, "lora_weights_backup", None)
-    if weights_backup is None:
-        if isinstance(self, torch.nn.MultiheadAttention):
-            weights_backup = (self.in_proj_weight.to(devices.cpu, copy=True), self.out_proj.weight.to(devices.cpu, copy=True))
-        else:
-            weights_backup = self.weight.to(devices.cpu, copy=True)
-
-        self.lora_weights_backup = weights_backup
-
-    if current_names != wanted_names:
-        if weights_backup is not None:
-            if isinstance(self, torch.nn.MultiheadAttention):
-                self.in_proj_weight.copy_(weights_backup[0])
-                self.out_proj.weight.copy_(weights_backup[1])
+    lora_layer_name = getattr(module, 'lora_layer_name', None)
+    for lora in loaded_loras:
+        module = lora.modules.get(lora_layer_name, None)
+        if module is not None:
+            if shared.opts.lora_apply_to_outputs and res.shape == input.shape:
+                res = res + module.up(module.down(res)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
             else:
                 self.weight.copy_(weights_backup)
 
@@ -293,50 +264,15 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
             if module is None:
                 continue
 
-            print(f'failed to calculate lora weights for layer {lora_layer_name}')
-
-        setattr(self, "lora_current_names", wanted_names)
-
-
-def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
-    setattr(self, "lora_current_names", ())
-    setattr(self, "lora_weights_backup", None)
+    return res
 
 
 def lora_Linear_forward(self, input):
-    lora_apply_weights(self)
-
-    return torch.nn.Linear_forward_before_lora(self, input)
-
-
-def lora_Linear_load_state_dict(self, *args, **kwargs):
-    lora_reset_cached_weight(self)
-
-    return torch.nn.Linear_load_state_dict_before_lora(self, *args, **kwargs)
+    return lora_forward(self, input, torch.nn.Linear_forward_before_lora(self, input))
 
 
 def lora_Conv2d_forward(self, input):
-    lora_apply_weights(self)
-
-    return torch.nn.Conv2d_forward_before_lora(self, input)
-
-
-def lora_Conv2d_load_state_dict(self, *args, **kwargs):
-    lora_reset_cached_weight(self)
-
-    return torch.nn.Conv2d_load_state_dict_before_lora(self, *args, **kwargs)
-
-
-def lora_MultiheadAttention_forward(self, *args, **kwargs):
-    lora_apply_weights(self)
-
-    return torch.nn.MultiheadAttention_forward_before_lora(self, *args, **kwargs)
-
-
-def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
-    lora_reset_cached_weight(self)
-
-    return torch.nn.MultiheadAttention_load_state_dict_before_lora(self, *args, **kwargs)
+    return lora_forward(self, input, torch.nn.Conv2d_forward_before_lora(self, input))
 
 
 def list_available_loras():
@@ -349,7 +285,7 @@ def list_available_loras():
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.safetensors'), recursive=True) + \
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.ckpt'), recursive=True)
 
-    for filename in sorted(candidates, key=str.lower):
+    for filename in sorted(candidates):
         if os.path.isdir(filename):
             continue
 
