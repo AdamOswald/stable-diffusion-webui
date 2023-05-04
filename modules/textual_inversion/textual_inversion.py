@@ -69,7 +69,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f'{filename}.optim')
 
     def checksum(self):
         if self.cached_checksum is not None:
@@ -190,7 +190,7 @@ class EmbeddingDatabase:
         embedding.shape = vec.shape[-1]
         embedding.filename = path
 
-        if self.expected_shape == -1 or self.expected_shape == embedding.shape:
+        if self.expected_shape in [-1, embedding.shape]:
             self.register_embedding(embedding, shared.sd_model)
         else:
             self.skipped_embeddings[name] = embedding
@@ -215,12 +215,10 @@ class EmbeddingDatabase:
 
     def load_textual_inversion_embeddings(self, force_reload=False):
         if not force_reload:
-            need_reload = False
-            for path, embdir in self.embedding_dirs.items():
-                if embdir.has_changed():
-                    need_reload = True
-                    break
-
+            need_reload = any(
+                embdir.has_changed()
+                for path, embdir in self.embedding_dirs.items()
+            )
             if not need_reload:
                 return
 
@@ -232,6 +230,12 @@ class EmbeddingDatabase:
         for path, embdir in self.embedding_dirs.items():
             self.load_from_dir(embdir)
             embdir.update()
+
+        # re-sort word_embeddings because load_from_dir may not load in alphabetic order.
+        # using a temporary copy so we don't reinitialize self.word_embeddings in case other objects have a reference to it.
+        sorted_word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
+        self.word_embeddings.clear()
+        self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
@@ -247,11 +251,14 @@ class EmbeddingDatabase:
         if possible_matches is None:
             return None, None
 
-        for ids, embedding in possible_matches:
-            if tokens[offset:offset + len(ids)] == ids:
-                return embedding, len(ids)
-
-        return None, None
+        return next(
+            (
+                (embedding, len(ids))
+                for ids, embedding in possible_matches
+                if tokens[offset : offset + len(ids)] == ids
+            ),
+            (None, None),
+        )
 
 
 def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
@@ -288,7 +295,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
 
     if step % shared.opts.training_write_csv_every != 0:
         return
-    write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
+    write_csv_header = not os.path.exists(os.path.join(log_directory, filename))
 
     with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
         csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])

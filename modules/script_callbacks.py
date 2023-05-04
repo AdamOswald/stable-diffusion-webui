@@ -93,6 +93,7 @@ callback_map = dict(
     callbacks_infotext_pasted=[],
     callbacks_script_unloaded=[],
     callbacks_before_ui=[],
+    callbacks_on_reload=[],
 )
 
 
@@ -107,6 +108,14 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
             c.callback(demo, app)
         except Exception:
             report_exception(c, 'app_started_callback')
+
+
+def app_reload_callback():
+    for c in callback_map['callbacks_on_reload']:
+        try:
+            c.callback()
+        except Exception:
+            report_exception(c, 'callbacks_on_reload')
 
 
 def model_loaded_callback(sd_model):
@@ -227,14 +236,14 @@ def before_ui_callback():
 
 def add_callback(callbacks, fun):
     stack = [x for x in inspect.stack() if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    filename = stack[0].filename if stack else 'unknown file'
 
     callbacks.append(ScriptCallback(filename, fun))
 
     
 def remove_current_script_callbacks():
     stack = [x for x in inspect.stack() if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    filename = stack[0].filename if stack else 'unknown file'
     if filename == 'unknown file':
         return
     for callback_list in callback_map.values():
@@ -252,6 +261,11 @@ def on_app_started(callback):
     """register a function to be called when the webui started, the gradio `Block` component and
     fastapi `FastAPI` object are passed as the arguments"""
     add_callback(callback_map['callbacks_app_started'], callback)
+
+
+def on_before_reload(callback):
+    """register a function to be called just before the server reloads."""
+    add_callback(callback_map['callbacks_on_reload'], callback)
 
 
 def on_model_loaded(callback):

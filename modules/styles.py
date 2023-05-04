@@ -22,12 +22,9 @@ class PromptStyle(typing.NamedTuple):
 
 def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
-        res = style_prompt.replace("{prompt}", prompt)
-    else:
-        parts = filter(None, (prompt.strip(), style_prompt.strip()))
-        res = ", ".join(parts)
-
-    return res
+        return style_prompt.replace("{prompt}", prompt)
+    parts = filter(None, (prompt.strip(), style_prompt.strip()))
+    return ", ".join(parts)
 
 
 def apply_styles_to_prompt(prompt, styles):
@@ -72,16 +69,14 @@ class StyleDatabase:
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
 
     def save_styles(self, path: str) -> None:
-        # Write to temporary file first, so we don't nuke the file if something goes wrong
-        fd, temp_path = tempfile.mkstemp(".csv")
+        # Always keep a backup file around
+        if os.path.exists(path):
+            shutil.copy(path, f"{path}.bak")
+
+        fd = os.open(path, os.O_RDWR|os.O_CREAT)
         with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
             writer.writerows(style._asdict() for k,     style in self.styles.items())
-
-        # Always keep a backup file around
-        if os.path.exists(path):
-            shutil.move(path, path + ".bak")
-        shutil.move(temp_path, path)

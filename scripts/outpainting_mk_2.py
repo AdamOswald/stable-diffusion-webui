@@ -60,10 +60,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
 
     def _get_masked_window_rgb(np_mask_grey, hardness=1.):
         np_mask_rgb = np.zeros((np_mask_grey.shape[0], np_mask_grey.shape[1], 3))
-        if hardness != 1.:
-            hardened = np_mask_grey[:] ** hardness
-        else:
-            hardened = np_mask_grey[:]
+        hardened = np_mask_grey[:] ** hardness if hardness != 1. else np_mask_grey[:]
         for c in range(3):
             np_mask_rgb[:, :, c] = hardened[:]
         return np_mask_rgb
@@ -275,7 +272,7 @@ class Script(scripts.Script):
 
         if opts.samples_save:
             for img in all_processed_images:
-                images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
+                images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.samples_format, info=res.info, p=p)
 
         if opts.grid_save and not unwanted_grid_because_of_img_count:
             images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)

@@ -4,15 +4,24 @@ def connect(token, port, region):
     account = None
     if token is None:
         token = 'None'
-    else:
-        if ':' in token:
-            # token = authtoken:username:password
-            account = token.split(':')[1] + ':' + token.split(':')[-1]
-            token = token.split(':')[0]
+    elif ':' in token:
+        # token = authtoken:username:password
+        account = token.split(':')[1] + ':' + token.split(':')[-1]
+        token = token.split(':')[0]
 
     config = conf.PyngrokConfig(
         auth_token=token, region=region
     )
+
+    if existing := ngrok.get_tunnels(pyngrok_config=config):
+        for established in existing:
+            # Extra configuration in the case that the user is also using ngrok for other tunnels
+            if established.config['addr'][-4:] == str(port):
+                public_url = existing[0].public_url
+                print(f'ngrok has already been connected to localhost:{port}! URL: {public_url}\n'
+                    'You can use this link after the launch is complete.')
+                return
+
     try:
         if account is None:
             public_url = ngrok.connect(port, pyngrok_config=config, bind_tls=True).public_url

@@ -53,10 +53,24 @@ def samples_to_image_grid(samples, approximation=None):
 def store_latent(decoded):
     state.current_latent = decoded
 
-    if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
-        if not shared.parallel_processing_allowed:
-            shared.state.assign_current_image(sample_to_image(decoded))
+    if (
+        opts.live_previews_enable
+        and opts.show_progress_every_n_steps > 0
+        and shared.state.sampling_step % opts.show_progress_every_n_steps == 0
+        and not shared.parallel_processing_allowed
+    ):
+        shared.state.assign_current_image(sample_to_image(decoded))
 
 
 class InterruptedException(BaseException):
     pass
+
+
+if opts.randn_source == "CPU":
+    import torchsde._brownian.brownian_interval
+
+    def torchsde_randn(size, dtype, device, seed):
+        generator = torch.Generator(devices.cpu).manual_seed(int(seed))
+        return torch.randn(size, dtype=dtype, device=devices.cpu, generator=generator).to(device)
+
+    torchsde._brownian.brownian_interval._randn = torchsde_randn
