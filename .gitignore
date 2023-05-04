@@ -18,3 +18,5 @@ notification.mp3
 .vscode
 /test/stdout.txt
 /test/stderr.txt
+/cache.json*
+/config_states/
