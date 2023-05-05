@@ -7,4 +7,11 @@ formatters:
 - format: "markdown"
   steps:
   - id: "flexmark"
-    parameters: {}
+    skip: false
+    parameters:
+      version: "0.62.2"
+  - id: "freshmark"
+    skip: false
+    parameters:
+      properties:
+        k1: "v1"
