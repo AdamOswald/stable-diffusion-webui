@@ -50,7 +50,8 @@ class ScriptPostprocessing:
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
-        return func(*args, **kwargs)
+        res = func(*args, **kwargs)
+        return res
     except Exception as e:
         errors.display(e, f"calling {filename}/{funcname}")
 
@@ -65,9 +66,9 @@ class ScriptPostprocessingRunner:
     def initialize_scripts(self, scripts_data):
         self.scripts = []
 
-        for script_class, path, basedir, script_module in scripts_data:
-            script: ScriptPostprocessing = script_class()
-            script.filename = path
+        for script_data in scripts_data:
+            script: ScriptPostprocessing = script_data.script_class()
+            script.filename = script_data.path
 
             if script.name == "Simple Upscale":
                 continue
@@ -122,12 +123,10 @@ class ScriptPostprocessingRunner:
 
             script_args = args[script.args_from:script.args_to]
 
-            process_args = {
-                name: value
-                for (name, component), value in zip(
-                    script.controls.items(), script_args
-                )
-            }
+            process_args = {}
+            for (name, _component), value in zip(script.controls.items(), script_args):
+                process_args[name] = value
+
             script.process(pp, **process_args)
 
     def create_args_for_run(self, scripts_args):
@@ -136,7 +135,7 @@ class ScriptPostprocessingRunner:
                 self.setup_ui()
 
         scripts = self.scripts_in_preferred_order()
-        args = [None] * max(x.args_to for x in scripts)
+        args = [None] * max([x.args_to for x in scripts])
 
         for script in scripts:
             script_args_dict = scripts_args.get(script.name, None)

@@ -41,11 +41,8 @@ def window_partition(x, window_size):
     """
     B, H, W, C = x.shape
     x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
-    return (
-        x.permute(0, 1, 3, 2, 4, 5)
-        .contiguous()
-        .view(-1, window_size, window_size, C)
-    )
+    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
+    return windows
 
 
 def window_reverse(windows, window_size, H, W):
@@ -77,7 +74,7 @@ class WindowAttention(nn.Module):
     """
 
     def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.,
-                 pretrained_window_size=[0, 0]):
+                 pretrained_window_size=(0, 0)):
 
         super().__init__()
         self.dim = dim
@@ -165,7 +162,10 @@ class WindowAttention(nn.Module):
             nW = mask.shape[0]
             attn = attn.view(B_ // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
             attn = attn.view(-1, self.num_heads, N, N)
-        attn = self.softmax(attn)
+            attn = self.softmax(attn)
+        else:
+            attn = self.softmax(attn)
+
         attn = self.attn_drop(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
@@ -241,7 +241,7 @@ class SwinTransformerBlock(nn.Module):
             attn_mask = None
 
         self.register_buffer("attn_mask", attn_mask)
-        
+
     def calculate_mask(self, x_size):
         # calculate attention mask for SW-MSA
         H, W = x_size
@@ -261,11 +261,9 @@ class SwinTransformerBlock(nn.Module):
         mask_windows = window_partition(img_mask, self.window_size)  # nW, window_size, window_size, 1
         mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
         attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
-        attn_mask = attn_mask.masked_fill(attn_mask != 0, -100.0).masked_fill(
-            attn_mask == 0, 0.0
-        )
+        attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
 
-        return attn_mask        
+        return attn_mask
 
     def forward(self, x, x_size):
         H, W = x_size
@@ -290,7 +288,7 @@ class SwinTransformerBlock(nn.Module):
             attn_windows = self.attn(x_windows, mask=self.attn_mask)  # nW*B, window_size*window_size, C
         else:
             attn_windows = self.attn(x_windows, mask=self.calculate_mask(x_size).to(x.device))
-            
+
         # merge windows
         attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
         shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
@@ -371,7 +369,7 @@ class PatchMerging(nn.Module):
         H, W = self.input_resolution
         flops = (H // 2) * (W // 2) * 4 * self.dim * 2 * self.dim
         flops += H * W * self.dim // 2
-        return flops    
+        return flops
 
 class BasicLayer(nn.Module):
     """ A basic Swin Transformer layer for one stage.
@@ -436,7 +434,9 @@ class BasicLayer(nn.Module):
         return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
 
     def flops(self):
-        flops = sum(blk.flops() for blk in self.blocks)
+        flops = 0
+        for blk in self.blocks:
+            flops += blk.flops()
         if self.downsample is not None:
             flops += self.downsample.flops()
         return flops
@@ -447,7 +447,7 @@ class BasicLayer(nn.Module):
             nn.init.constant_(blk.norm1.weight, 0)
             nn.init.constant_(blk.norm2.bias, 0)
             nn.init.constant_(blk.norm2.weight, 0)
-            
+
 class PatchEmbed(nn.Module):
     r""" Image to Patch Embedding
     Args:
@@ -472,7 +472,10 @@ class PatchEmbed(nn.Module):
         self.embed_dim = embed_dim
 
         self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
-        self.norm = norm_layer(embed_dim) if norm_layer is not None else None
+        if norm_layer is not None:
+            self.norm = norm_layer(embed_dim)
+        else:
+            self.norm = None
 
     def forward(self, x):
         B, C, H, W = x.shape
@@ -489,7 +492,7 @@ class PatchEmbed(nn.Module):
         flops = Ho * Wo * self.embed_dim * self.in_chans * (self.patch_size[0] * self.patch_size[1])
         if self.norm is not None:
             flops += Ho * Wo * self.embed_dim
-        return flops           
+        return flops
 
 class RSTB(nn.Module):
     """Residual Swin Transformer Block (RSTB).
@@ -528,7 +531,7 @@ class RSTB(nn.Module):
                                          num_heads=num_heads,
                                          window_size=window_size,
                                          mlp_ratio=mlp_ratio,
-                                         qkv_bias=qkv_bias, 
+                                         qkv_bias=qkv_bias,
                                          drop=drop, attn_drop=attn_drop,
                                          drop_path=drop_path,
                                          norm_layer=norm_layer,
@@ -595,7 +598,8 @@ class PatchUnEmbed(nn.Module):
         return x
 
     def flops(self):
-        return 0
+        flops = 0
+        return flops
 
 
 class Upsample(nn.Sequential):
@@ -610,13 +614,15 @@ class Upsample(nn.Sequential):
         m = []
         if (scale & (scale - 1)) == 0:  # scale = 2^n
             for _ in range(int(math.log(scale, 2))):
-                m.extend((nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1), nn.PixelShuffle(2)))
+                m.append(nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1))
+                m.append(nn.PixelShuffle(2))
         elif scale == 3:
-            m.extend((nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1), nn.PixelShuffle(3)))
+            m.append(nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1))
+            m.append(nn.PixelShuffle(3))
         else:
             raise ValueError(f'scale {scale} is not supported. ' 'Supported scales: 2^n and 3.')
         super(Upsample, self).__init__(*m)
-        
+
 class Upsample_hf(nn.Sequential):
     """Upsample module.
 
@@ -629,12 +635,14 @@ class Upsample_hf(nn.Sequential):
         m = []
         if (scale & (scale - 1)) == 0:  # scale = 2^n
             for _ in range(int(math.log(scale, 2))):
-                m.extend((nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1), nn.PixelShuffle(2)))
+                m.append(nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1))
+                m.append(nn.PixelShuffle(2))
         elif scale == 3:
-            m.extend((nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1), nn.PixelShuffle(3)))
+            m.append(nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1))
+            m.append(nn.PixelShuffle(3))
         else:
             raise ValueError(f'scale {scale} is not supported. ' 'Supported scales: 2^n and 3.')
-        super(Upsample_hf, self).__init__(*m)        
+        super(Upsample_hf, self).__init__(*m)
 
 
 class UpsampleOneStep(nn.Sequential):
@@ -650,15 +658,17 @@ class UpsampleOneStep(nn.Sequential):
     def __init__(self, scale, num_feat, num_out_ch, input_resolution=None):
         self.num_feat = num_feat
         self.input_resolution = input_resolution
-        m = [nn.Conv2d(num_feat, (scale ** 2) * num_out_ch, 3, 1, 1)]
+        m = []
+        m.append(nn.Conv2d(num_feat, (scale ** 2) * num_out_ch, 3, 1, 1))
         m.append(nn.PixelShuffle(scale))
         super(UpsampleOneStep, self).__init__(*m)
 
     def flops(self):
         H, W = self.input_resolution
-        return H * W * self.num_feat * 3 * 9
-    
-    
+        flops = H * W * self.num_feat * 3 * 9
+        return flops
+
+
 
 class Swin2SR(nn.Module):
     r""" Swin2SR
@@ -688,8 +698,8 @@ class Swin2SR(nn.Module):
     """
 
     def __init__(self, img_size=64, patch_size=1, in_chans=3,
-                 embed_dim=96, depths=[6, 6, 6, 6], num_heads=[6, 6, 6, 6],
-                 window_size=7, mlp_ratio=4., qkv_bias=True, 
+                 embed_dim=96, depths=(6, 6, 6, 6), num_heads=(6, 6, 6, 6),
+                 window_size=7, mlp_ratio=4., qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
                  use_checkpoint=False, upscale=2, img_range=1., upsampler='', resi_connection='1conv',
@@ -754,7 +764,7 @@ class Swin2SR(nn.Module):
                          num_heads=num_heads[i_layer],
                          window_size=window_size,
                          mlp_ratio=self.mlp_ratio,
-                         qkv_bias=qkv_bias, 
+                         qkv_bias=qkv_bias,
                          drop=drop_rate, attn_drop=attn_drop_rate,
                          drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],  # no impact on SR results
                          norm_layer=norm_layer,
@@ -766,7 +776,7 @@ class Swin2SR(nn.Module):
 
                          )
             self.layers.append(layer)
-            
+
         if self.upsampler == 'pixelshuffle_hf':
             self.layers_hf = nn.ModuleList()
             for i_layer in range(self.num_layers):
@@ -777,7 +787,7 @@ class Swin2SR(nn.Module):
                              num_heads=num_heads[i_layer],
                              window_size=window_size,
                              mlp_ratio=self.mlp_ratio,
-                             qkv_bias=qkv_bias, 
+                             qkv_bias=qkv_bias,
                              drop=drop_rate, attn_drop=attn_drop_rate,
                              drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],  # no impact on SR results
                              norm_layer=norm_layer,
@@ -789,7 +799,7 @@ class Swin2SR(nn.Module):
 
                              )
                 self.layers_hf.append(layer)
-                        
+
         self.norm = norm_layer(self.num_features)
 
         # build the last conv layer in deep feature extraction
@@ -819,10 +829,10 @@ class Swin2SR(nn.Module):
             self.conv_aux = nn.Conv2d(num_feat, num_out_ch, 3, 1, 1)
             self.conv_after_aux = nn.Sequential(
                 nn.Conv2d(3, num_feat, 3, 1, 1),
-                nn.LeakyReLU(inplace=True))            
+                nn.LeakyReLU(inplace=True))
             self.upsample = Upsample(upscale, num_feat)
             self.conv_last = nn.Conv2d(num_feat, num_out_ch, 3, 1, 1)
-            
+
         elif self.upsampler == 'pixelshuffle_hf':
             self.conv_before_upsample = nn.Sequential(nn.Conv2d(embed_dim, num_feat, 3, 1, 1),
                                                       nn.LeakyReLU(inplace=True))
@@ -836,7 +846,7 @@ class Swin2SR(nn.Module):
                 nn.Conv2d(embed_dim, num_feat, 3, 1, 1),
                 nn.LeakyReLU(inplace=True))
             self.conv_last_hf = nn.Conv2d(num_feat, num_out_ch, 3, 1, 1)
-            
+
         elif self.upsampler == 'pixelshuffledirect':
             # for lightweight SR (to save parameters)
             self.upsample = UpsampleOneStep(upscale, embed_dim, num_out_ch,
@@ -895,7 +905,7 @@ class Swin2SR(nn.Module):
         x = self.patch_unembed(x, x_size)
 
         return x
-    
+
     def forward_features_hf(self, x):
         x_size = (x.shape[2], x.shape[3])
         x = self.patch_embed(x)
@@ -909,7 +919,7 @@ class Swin2SR(nn.Module):
         x = self.norm(x)  # B L C
         x = self.patch_unembed(x, x_size)
 
-        return x    
+        return x
 
     def forward(self, x):
         H, W = x.shape[2:]
@@ -941,7 +951,7 @@ class Swin2SR(nn.Module):
             x = self.conv_after_body(self.forward_features(x)) + x
             x_before = self.conv_before_upsample(x)
             x_out = self.conv_last(self.upsample(x_before))
-            
+
             x_hf = self.conv_first_hf(x_before)
             x_hf = self.conv_after_body_hf(self.forward_features_hf(x_hf)) + x_hf
             x_hf = self.conv_before_upsample_hf(x_hf)
@@ -967,15 +977,15 @@ class Swin2SR(nn.Module):
             x_first = self.conv_first(x)
             res = self.conv_after_body(self.forward_features(x_first)) + x_first
             x = x + self.conv_last(res)
-        
+
         x = x / self.img_range + self.mean
         if self.upsampler == "pixelshuffle_aux":
             return x[:, :, :H*self.upscale, :W*self.upscale], aux
-        
+
         elif self.upsampler == "pixelshuffle_hf":
             x_out = x_out / self.img_range + self.mean
             return x_out[:, :, :H*self.upscale, :W*self.upscale], x[:, :, :H*self.upscale, :W*self.upscale], x_hf[:, :, :H*self.upscale, :W*self.upscale]
-        
+
         else:
             return x[:, :, :H*self.upscale, :W*self.upscale]
 

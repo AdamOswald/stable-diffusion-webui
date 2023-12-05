@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 from collections import namedtuple
 from pathlib import Path
 import re
@@ -11,7 +10,6 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-import modules.shared as shared
 from modules import devices, paths, shared, lowvram, modelloader, errors
 
 blip_image_eval_size = 384
@@ -136,18 +134,14 @@ class InterrogateModels:
         self.dtype = next(self.clip_model.parameters()).dtype
 
     def send_clip_to_ram(self):
-        if (
-            not shared.opts.interrogate_keep_models_in_memory
-            and self.clip_model is not None
-        ):
-            self.clip_model = self.clip_model.to(devices.cpu)
+        if not shared.opts.interrogate_keep_models_in_memory:
+            if self.clip_model is not None:
+                self.clip_model = self.clip_model.to(devices.cpu)
 
     def send_blip_to_ram(self):
-        if (
-            not shared.opts.interrogate_keep_models_in_memory
-            and self.blip_model is not None
-        ):
-            self.blip_model = self.blip_model.to(devices.cpu)
+        if not shared.opts.interrogate_keep_models_in_memory:
+            if self.blip_model is not None:
+                self.blip_model = self.blip_model.to(devices.cpu)
 
     def unload(self):
         self.send_clip_to_ram()
@@ -161,12 +155,10 @@ class InterrogateModels:
         devices.torch_gc()
 
         if shared.opts.interrogate_clip_dict_limit != 0:
-            text_array = text_array[:int(shared.opts.interrogate_clip_dict_limit)]
+            text_array = text_array[0:int(shared.opts.interrogate_clip_dict_limit)]
 
         top_count = min(top_count, len(text_array))
-        text_tokens = clip.tokenize(list(text_array), truncate=True).to(
-            devices.device_interrogate
-        )
+        text_tokens = clip.tokenize(list(text_array), truncate=True).to(devices.device_interrogate)
         text_features = self.clip_model.encode_text(text_tokens).type(self.dtype)
         text_features /= text_features.norm(dim=-1, keepdim=True)
 
@@ -192,12 +184,10 @@ class InterrogateModels:
 
     def interrogate(self, pil_image):
         res = ""
-        shared.state.begin()
-        shared.state.job = 'interrogate'
+        shared.state.begin(job="interrogate")
         try:
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                lowvram.send_everything_to_cpu()
-                devices.torch_gc()
+            lowvram.send_everything_to_cpu()
+            devices.torch_gc()
 
             self.load()
 
@@ -209,13 +199,13 @@ class InterrogateModels:
 
             clip_image = self.clip_preprocess(pil_image).unsqueeze(0).type(self.dtype).to(devices.device_interrogate)
 
-            with (torch.no_grad(), devices.autocast()):
+            with torch.no_grad(), devices.autocast():
                 image_features = self.clip_model.encode_image(clip_image).type(self.dtype)
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
-                for name, topn, items in self.categories():
-                    matches = self.rank(image_features, items, top_count=topn)
+                for cat in self.categories():
+                    matches = self.rank(image_features, cat.items, top_count=cat.topn)
                     for match, score in matches:
                         if shared.opts.interrogate_return_ranks:
                             res += f", ({match}:{score/100:.3f})"
@@ -223,8 +213,7 @@ class InterrogateModels:
                             res += f", {match}"
 
         except Exception:
-            print("Error interrogating", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report("Error interrogating", exc_info=True)
             res += "<error>"
 
         self.unload()

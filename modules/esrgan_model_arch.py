@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 import math
-import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,7 +37,7 @@ class RRDBNet(nn.Module):
         elif upsample_mode == 'pixelshuffle':
             upsample_block = pixelshuffle_block
         else:
-            raise NotImplementedError('upsample mode [{:s}] is not found'.format(upsample_mode))
+            raise NotImplementedError(f'upsample mode [{upsample_mode}] is not found')
         if upscale == 3:
             upsampler = upsample_block(nf, nf, 3, act_type=act_type, convtype=convtype)
         else:
@@ -106,7 +105,7 @@ class ResidualDenseBlock_5C(nn.Module):
     Modified options that can be used:
         - "Partial Convolution based Padding" arXiv:1811.11718
         - "Spectral normalization" arXiv:1802.05957
-        - "ICASSP 2020 - ESRGAN+ : Further Improving ESRGAN" N. C. 
+        - "ICASSP 2020 - ESRGAN+ : Further Improving ESRGAN" N. C.
             {Rakotonirina} and A. {Rasoanaivo}
     """
 
@@ -130,7 +129,10 @@ class ResidualDenseBlock_5C(nn.Module):
         self.conv4 = conv_block(nf+3*gc, gc, kernel_size, stride, bias=bias, pad_type=pad_type,
             norm_type=norm_type, act_type=act_type, mode=mode, convtype=convtype,
             spectral_norm=spectral_norm)
-        last_act = None if mode == 'CNA' else act_type
+        if mode == 'CNA':
+            last_act = None
+        else:
+            last_act = act_type
         self.conv5 = conv_block(nf+4*gc, nf, 3, stride, bias=bias, pad_type=pad_type,
             norm_type=norm_type, act_type=last_act, mode=mode, convtype=convtype,
             spectral_norm=spectral_norm)
@@ -145,7 +147,10 @@ class ResidualDenseBlock_5C(nn.Module):
         if self.conv1x1:
             x4 = x4 + x2
         x5 = self.conv5(torch.cat((x, x1, x2, x3, x4), 1))
-        return self.noise(x5.mul(0.2) + x) if self.noise else x5 * 0.2 + x
+        if self.noise:
+            return self.noise(x5.mul(0.2) + x)
+        else:
+            return x5 * 0.2 + x
 
 
 ####################
@@ -165,7 +170,7 @@ class GaussianNoise(nn.Module):
             scale = self.sigma * x.detach() if self.is_relative_detach else self.sigma * x
             sampled_noise = self.noise.repeat(*x.size()).normal_() * scale
             x = x + sampled_noise
-        return x 
+        return x
 
 def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
@@ -255,9 +260,9 @@ class Upsample(nn.Module):
 
     def extra_repr(self):
         if self.scale_factor is not None:
-            info = f'scale_factor={str(self.scale_factor)}'
+            info = f'scale_factor={self.scale_factor}'
         else:
-            info = f'size={str(self.size)}'
+            info = f'size={self.size}'
         info += f', mode={self.mode}'
         return info
 
@@ -324,7 +329,9 @@ def make_layer(basic_block, num_basic_block, **kwarg):
     Returns:
         nn.Sequential: Stacked blocks in nn.Sequential.
     """
-    layers = [basic_block(**kwarg) for _ in range(num_basic_block)]
+    layers = []
+    for _ in range(num_basic_block):
+        layers.append(basic_block(**kwarg))
     return nn.Sequential(*layers)
 
 
@@ -342,7 +349,7 @@ def act(act_type, inplace=True, neg_slope=0.2, n_prelu=1, beta=1.0):
     elif act_type == 'sigmoid':  # [0, 1] range output
         layer = nn.Sigmoid()
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(f'activation layer [{act_type}] is not found')
     return layer
 
 
@@ -364,7 +371,7 @@ def norm(norm_type, nc):
     elif norm_type == 'none':
         def norm_layer(x): return Identity()
     else:
-        raise NotImplementedError('normalization layer [{:s}] is not found'.format(norm_type))
+        raise NotImplementedError(f'normalization layer [{norm_type}] is not found')
     return layer
 
 
@@ -380,13 +387,14 @@ def pad(pad_type, padding):
     elif pad_type == 'zero':
         layer = nn.ZeroPad2d(padding)
     else:
-        raise NotImplementedError('padding layer [{:s}] is not implemented'.format(pad_type))
+        raise NotImplementedError(f'padding layer [{pad_type}] is not implemented')
     return layer
 
 
 def get_valid_padding(kernel_size, dilation):
     kernel_size = kernel_size + (kernel_size - 1) * (dilation - 1)
-    return (kernel_size - 1) // 2
+    padding = (kernel_size - 1) // 2
+    return padding
 
 
 class ShortcutBlock(nn.Module):
@@ -396,7 +404,8 @@ class ShortcutBlock(nn.Module):
         self.sub = submodule
 
     def forward(self, x):
-        return x + self.sub(x)
+        output = x + self.sub(x)
+        return output
 
     def __repr__(self):
         return 'Identity + \n|' + self.sub.__repr__().replace('\n', '\n|')
@@ -411,7 +420,8 @@ def sequential(*args):
     modules = []
     for module in args:
         if isinstance(module, nn.Sequential):
-            modules.extend(iter(module.children()))
+            for submodule in module.children():
+                modules.append(submodule)
         elif isinstance(module, nn.Module):
             modules.append(module)
     return nn.Sequential(*modules)
@@ -421,15 +431,17 @@ def conv_block(in_nc, out_nc, kernel_size, stride=1, dilation=1, groups=1, bias=
                pad_type='zero', norm_type=None, act_type='relu', mode='CNA', convtype='Conv2D',
                spectral_norm=False):
     """ Conv layer with padding, normalization, activation """
-    assert mode in ['CNA', 'NAC', 'CNAC'], 'Wrong conv mode [{:s}]'.format(mode)
+    assert mode in ['CNA', 'NAC', 'CNAC'], f'Wrong conv mode [{mode}]'
     padding = get_valid_padding(kernel_size, dilation)
     p = pad(pad_type, padding) if pad_type and pad_type != 'zero' else None
     padding = padding if pad_type == 'zero' else 0
 
     if convtype=='PartialConv2D':
+        from torchvision.ops import PartialConv2d  # this is definitely not going to work, but PartialConv2d doesn't work anyway and this shuts up static analyzer
         c = PartialConv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
                dilation=dilation, bias=bias, groups=groups)
     elif convtype=='DeformConv2D':
+        from torchvision.ops import DeformConv2d  # not tested
         c = DeformConv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
                dilation=dilation, bias=bias, groups=groups)
     elif convtype=='Conv3D':

@@ -636,7 +636,7 @@ class SwinIR(nn.Module):
     """
 
     def __init__(self, img_size=64, patch_size=1, in_chans=3,
-                 embed_dim=96, depths=[6, 6, 6, 6], num_heads=[6, 6, 6, 6],
+                 embed_dim=96, depths=(6, 6, 6, 6), num_heads=(6, 6, 6, 6),
                  window_size=7, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
@@ -797,7 +797,7 @@ class SwinIR(nn.Module):
     def forward(self, x):
         H, W = x.shape[2:]
         x = self.check_image_size(x)
-        
+
         self.mean = self.mean.type_as(x)
         x = (x - self.mean) * self.img_range
 

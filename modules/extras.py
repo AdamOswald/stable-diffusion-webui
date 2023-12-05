@@ -7,7 +7,7 @@ import json
 import torch
 import tqdm
 
-from modules import shared, images, sd_models, sd_vae, sd_models_config
+from modules import shared, images, sd_models, sd_vae, sd_models_config, errors
 from modules.ui_common import plaintext_to_html
 import gradio as gr
 import safetensors.torch
@@ -70,9 +70,21 @@ def to_half(tensor, enable):
     return tensor.half() if enable and tensor.dtype == torch.float else tensor
 
 
-def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata):
-    shared.state.begin()
-    shared.state.job = 'model-merge'
+def read_metadata(primary_model_name, secondary_model_name, tertiary_model_name):
+    metadata = {}
+
+    for checkpoint_name in [primary_model_name, secondary_model_name, tertiary_model_name]:
+        checkpoint_info = sd_models.checkpoints_list.get(checkpoint_name, None)
+        if checkpoint_info is None:
+            continue
+
+        metadata.update(checkpoint_info.metadata)
+
+    return json.dumps(metadata, indent=4, ensure_ascii=False)
+
+
+def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata, add_merge_recipe, copy_metadata_fields, metadata_json):
+    shared.state.begin(job="model-merge")
 
     def fail(message):
         shared.state.textinfo = message
@@ -243,9 +255,25 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Saving"
     print(f"Saving to {output_modelname}...")
 
-    metadata = {"format": "pt", "sd_merge_models": {}, "sd_merge_recipe": None}
+    metadata = {}
+
+    if save_metadata and copy_metadata_fields:
+        if primary_model_info:
+            metadata.update(primary_model_info.metadata)
+        if secondary_model_info:
+            metadata.update(secondary_model_info.metadata)
+        if tertiary_model_info:
+            metadata.update(tertiary_model_info.metadata)
 
     if save_metadata:
+        try:
+            metadata.update(json.loads(metadata_json))
+        except Exception as e:
+            errors.display(e, "readin metadata from json")
+
+        metadata["format"] = "pt"
+
+    if save_metadata and add_merge_recipe:
         merge_recipe = {
             "type": "webui", # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
@@ -261,17 +289,18 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             "is_inpainting": result_is_inpainting_model,
             "is_instruct_pix2pix": result_is_instruct_pix2pix_model
         }
-        metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
+
+        sd_merge_models = {}
 
         def add_model_metadata(checkpoint_info):
             checkpoint_info.calculate_shorthash()
-            metadata["sd_merge_models"][checkpoint_info.sha256] = {
+            sd_merge_models[checkpoint_info.sha256] = {
                 "name": checkpoint_info.name,
                 "legacy_hash": checkpoint_info.hash,
                 "sd_merge_recipe": checkpoint_info.metadata.get("sd_merge_recipe", None)
             }
 
-            metadata["sd_merge_models"].update(checkpoint_info.metadata.get("sd_merge_models", {}))
+            sd_merge_models.update(checkpoint_info.metadata.get("sd_merge_models", {}))
 
         add_model_metadata(primary_model_info)
         if secondary_model_info:
@@ -279,11 +308,12 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         if tertiary_model_info:
             add_model_metadata(tertiary_model_info)
 
-        metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
+        metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
+        metadata["sd_merge_models"] = json.dumps(sd_merge_models)
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":
-        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
+        safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata if len(metadata)>0 else None)
     else:
         torch.save(theta_0, output_modelname)
 
